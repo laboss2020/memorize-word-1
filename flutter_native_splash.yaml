@@ -1,0 +1,12 @@
+# flutter_native_splash 配置。源图由 `flutter test tool/icon_gen_test.dart` 生成。
+flutter_native_splash:
+  color: '#3F6EDC'
+  image: 'assets/icon/icon_foreground.png'
+  color_dark: '#2B4FA8'
+  image_dark: 'assets/icon/icon_foreground.png'
+
+  android_12:
+    color: '#3F6EDC'
+    image: 'assets/icon/icon_foreground.png'
+    color_dark: '#2B4FA8'
+    image_dark: 'assets/icon/icon_foreground.png'
