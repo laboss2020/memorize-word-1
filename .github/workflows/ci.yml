@@ -63,3 +63,14 @@ jobs:
       - run: flutter pub get
       # Windows 本地无法验证 iOS；编译通过即守住了 iOS 端的代码正确性。
       - run: flutter build ios --no-codesign
+      # 打包成 .ipa 产物（无签名）：可用 Sideloadly/AltStore 在 Windows 上
+      # 用个人 Apple ID 重签名后 USB 安装；正式分发需付费开发者账号签名。
+      - name: 打包未签名 IPA
+        run: |
+          mkdir -p build/ios/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/Payload/
+          cd build/ios && zip -q -r Runner-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: build/ios/Runner-unsigned.ipa

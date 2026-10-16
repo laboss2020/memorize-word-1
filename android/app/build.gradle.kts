@@ -51,5 +51,7 @@ flutter {
 }
 
 dependencies {
+    // 配合上方 isCoreLibraryDesugaringEnabled：flutter_local_notifications 使用了
+    // java.time 等需要在低 API 设备上脱糖的 API，缺此依赖 checkReleaseAarMetadata 会失败。
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
