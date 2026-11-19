@@ -24,11 +24,6 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <!-- 关闭 Impeller（部分 Android 13 机型的 Vulkan 驱动存在渲染兼容问题，
-                 表现为页面空白但触摸仍生效），回退到 Skia 渲染。 -->
-            <meta-data
-              android:name="io.flutter.embedding.android.EnableImpeller"
-              android:value="false" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -39,6 +34,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- 关闭 Impeller（部分机型的 Vulkan 驱动存在渲染兼容问题，
+             表现为页面空白/旧帧残留但触摸仍生效），回退到 Skia 渲染。
+             必须放在 <application> 层级，放在 <activity> 内会被引擎忽略。 -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
