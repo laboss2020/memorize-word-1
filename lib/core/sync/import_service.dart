@@ -135,6 +135,7 @@ class ImportService {
         id: reqString(p, 'id'),
         nativeLang: optString(p, 'nativeLang') ?? 'zh',
         learningLang: optString(p, 'learningLang') ?? 'en',
+        glossMode: optString(p, 'glossMode') ?? 'zh',
         dailyNewLimit: optInt(p, 'dailyNewLimit') ?? 10,
         dailyReviewLimit: optInt(p, 'dailyReviewLimit') ?? 50,
         reminderEnabled: optBool(p, 'reminderEnabled') ?? true,

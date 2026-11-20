@@ -180,7 +180,7 @@ class SettingsPage extends ConsumerWidget {
     return [
       const ButtonSegment(value: 'zh', label: Text('中文')),
       ButtonSegment(value: 'alt', label: Text(alt)),
-      ButtonSegment(value: 'both', label: Text('中${alt}双语')),
+      ButtonSegment(value: 'both', label: Text('中$alt双语')),
     ];
   }
 
