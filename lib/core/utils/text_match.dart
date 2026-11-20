@@ -144,17 +144,23 @@ bool _isConsonant(String ch) =>
     'bcdfghjklmnpqrstvwxyz'.contains(ch);
 
 /// 填空题构造：在例句中定位词条并挖空。
+/// [pickTranslation] 决定取哪条例句翻译（随释义语言设置）。
 /// 返回 (sentence 挖空句, answer 被挖掉的词形, translation)；无法定位返回 null。
-({String sentence, String answer, String? translation})? buildCloze(Word word) {
+({String sentence, String answer, String? translation})? buildCloze(
+  Word word, {
+  String? Function(WordExample example) pickTranslation = _defaultTranslation,
+}) {
   final examples = parseExamples(word.examples);
   for (final e in examples) {
     final answer = _locateAndBlank(e.text, word.headword, word.language);
     if (answer != null) {
-      return (sentence: answer.$1, answer: answer.$2, translation: e.translation);
+      return (sentence: answer.$1, answer: answer.$2, translation: pickTranslation(e));
     }
   }
   return null;
 }
+
+String? _defaultTranslation(WordExample example) => example.translations['zh'];
 
 /// 在句中查找目标词（英语按整词/小写、日语按子串），挖空后返回（挖空句, 答案）。
 (String, String)? _locateAndBlank(

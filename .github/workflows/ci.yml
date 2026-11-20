@@ -19,6 +19,11 @@ jobs:
           cache: true
 
       - run: flutter pub get
+      # 生成本地无法生成的 drift/moor 代码（Windows 无 dart SDK 时手工维护 .g.dart），
+      # 并校验提交的生成代码与 schema 一致。
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - name: 检查生成代码已提交且一致
+        run: git diff --exit-code -- '**/*.g.dart'
       - run: flutter analyze
       - run: flutter test --coverage
 
@@ -41,6 +46,7 @@ jobs:
           cache: true
 
       - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
@@ -61,6 +67,7 @@ jobs:
           cache: true
 
       - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
       # Windows 本地无法验证 iOS；编译通过即守住了 iOS 端的代码正确性。
       - run: flutter build ios --no-codesign
       # 打包成 .ipa 产物（无签名）：可用 Sideloadly/AltStore 在 Windows 上

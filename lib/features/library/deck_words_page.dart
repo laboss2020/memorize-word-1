@@ -16,6 +16,7 @@ class DeckWordsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final words = ref.watch(deckWordsProvider(deckId));
+    final glossMode = ref.watch(settingsProvider).value?.glossMode ?? 'zh';
 
     return Scaffold(
       appBar: AppBar(title: Text(deckName)),
@@ -37,7 +38,11 @@ class DeckWordsPage extends ConsumerWidget {
               title: Text(word.headword),
               subtitle: Text(
                 word.reading ??
-                    meaningsToLine(parseMeanings(word.meanings)),
+                    meaningsLine(
+                      word.meanings,
+                      glossMode: glossMode,
+                      learningLang: word.language,
+                    ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

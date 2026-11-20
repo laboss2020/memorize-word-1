@@ -17,9 +17,10 @@ class SeedImportResult {
   final int wordCount;
 }
 
-/// 首启种子导入：把 assets/db/seed_v1.sqlite 中的词库表批量拷入主库。
+/// 首启种子导入：把 assets/db/seed_v2.sqlite 中的词库表批量拷入主库。
 ///
-/// 幂等：比较 meta.seed_version，一致且词表非空则跳过。
+/// 幂等：比较 meta.seed_version，一致且词表非空则跳过；
+/// 版本变化时全量重建词库表（词 id 稳定，用户进度表不受影响）。
 /// 词库表为只读区，用户数据永不触碰。
 class SeedImporter {
   SeedImporter(this.db, {required Directory tempDir})
@@ -51,16 +52,21 @@ class SeedImporter {
       }
 
       await db.transaction(() async {
+        // 版本升级（如 v1→v2 补释义）需覆盖旧行：全量重建词库表。
+        // 词 id 为 uuidv5(headword) 稳定不变，word_progress/study_logs 引用有效。
+        await db.customStatement('DELETE FROM deck_words');
+        await db.customStatement('DELETE FROM decks');
+        await db.customStatement('DELETE FROM words');
         await db.customStatement(
-          'INSERT OR IGNORE INTO words (id, language, headword, reading, pos, '
+          'INSERT INTO words (id, language, headword, reading, pos, '
           'phonetic, meanings, examples, difficulty, level, freq_rank, tags) '
           'SELECT id, language, headword, reading, pos, phonetic, meanings, '
           'examples, difficulty, level, freq_rank, tags FROM seed.words');
         await db.customStatement(
-          'INSERT OR IGNORE INTO decks (id, language, name, sort_order) '
+          'INSERT INTO decks (id, language, name, sort_order) '
           'SELECT id, language, name, sort_order FROM seed.decks');
         await db.customStatement(
-          'INSERT OR IGNORE INTO deck_words (deck_id, word_id, sort_order) '
+          'INSERT INTO deck_words (deck_id, word_id, sort_order) '
           'SELECT deck_id, word_id, sort_order FROM seed.deck_words');
         await db.meta.insertOnConflictUpdate(MetaCompanion.insert(
           key: 'seed_version',

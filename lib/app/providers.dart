@@ -21,7 +21,7 @@ final seedImportProvider = FutureProvider<SeedImportResult>((ref) async {
   final tempDir = await getTemporaryDirectory();
   final importer = SeedImporter(db, tempDir: tempDir);
   return importer.importIfNeeded(() async {
-    final data = await rootBundle.load('assets/db/seed_v1.sqlite');
+    final data = await rootBundle.load('assets/db/seed_v2.sqlite');
     return data.buffer.asUint8List();
   });
 });

@@ -37,8 +37,14 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
     }
     final progress = ref.watch(progressProvider(widget.wordId)).value;
     final logs = ref.watch(wordLogsProvider(widget.wordId)).value ?? const [];
+    final settings = ref.watch(settingsProvider).value;
+    final glossMode = settings?.glossMode ?? 'zh';
     final scheme = Theme.of(context).colorScheme;
-    final meanings = parseMeanings(word.meanings);
+    final meanings = selectMeanings(
+      word.meanings,
+      glossMode: glossMode,
+      learningLang: word.language,
+    );
     final examples = parseExamples(word.examples);
 
     return Scaffold(
@@ -90,18 +96,24 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
             Text('例句', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             for (final e in examples)
-              Card(
-                child: ListTile(
-                  title: Text(e.text),
-                  subtitle:
-                      e.translation == null ? null : Text(e.translation!),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.volume_up_outlined),
-                    onPressed: () =>
-                        _tts.speak(e.text, language: word.language),
+              Builder(builder: (_) {
+                final tr = translationFor(
+                  e,
+                  glossMode: glossMode,
+                  learningLang: word.language,
+                );
+                return Card(
+                  child: ListTile(
+                    title: Text(e.text),
+                    subtitle: tr == null ? null : Text(tr),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.volume_up_outlined),
+                      onPressed: () =>
+                          _tts.speak(e.text, language: word.language),
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
           ],
           const SizedBox(height: 20),
           if (progress != null) _ProgressCard(progress: progress),

@@ -18,6 +18,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
       id: 'local',
       nativeLang: 'zh',
       learningLang: 'en',
+      glossMode: 'zh',
       dailyNewLimit: 10,
       dailyReviewLimit: 50,
       reminderEnabled: true,

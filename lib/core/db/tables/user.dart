@@ -57,6 +57,8 @@ class Settings extends Table {
   TextColumn get id => text().clientDefault(() => 'local')();
   TextColumn get nativeLang => text().withDefault(const Constant('zh'))(); // 界面语言
   TextColumn get learningLang => text().withDefault(const Constant('en'))(); // 当前学习语言
+  /// 释义语言模式：'zh'=中文；'alt'=辅助语言（学日语→英文，学英语→日文）；'both'=双语。
+  TextColumn get glossMode => text().withDefault(const Constant('zh'))();
   IntColumn get dailyNewLimit => integer().withDefault(const Constant(10))();
   IntColumn get dailyReviewLimit => integer().withDefault(const Constant(50))();
   BoolColumn get reminderEnabled => boolean().withDefault(const Constant(true))();

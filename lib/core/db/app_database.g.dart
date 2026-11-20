@@ -2873,6 +2873,18 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
     requiredDuringInsert: false,
     defaultValue: const Constant('en'),
   );
+  static const VerificationMeta _glossModeMeta = const VerificationMeta(
+    'glossMode',
+  );
+  @override
+  late final GeneratedColumn<String> glossMode = GeneratedColumn<String>(
+    'gloss_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('zh'),
+  );
   static const VerificationMeta _dailyNewLimitMeta = const VerificationMeta(
     'dailyNewLimit',
   );
@@ -3027,6 +3039,7 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
     id,
     nativeLang,
     learningLang,
+    glossMode,
     dailyNewLimit,
     dailyReviewLimit,
     reminderEnabled,
@@ -3067,6 +3080,15 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         learningLang.isAcceptableOrUnknown(
           data['learning_lang']!,
           _learningLangMeta,
+        ),
+      );
+    }
+    if (data.containsKey('gloss_mode')) {
+      context.handle(
+        _glossModeMeta,
+        glossMode.isAcceptableOrUnknown(
+          data['gloss_mode']!,
+          _glossModeMeta,
         ),
       );
     }
@@ -3189,6 +3211,10 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
         DriftSqlType.string,
         data['${effectivePrefix}learning_lang'],
       )!,
+      glossMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gloss_mode'],
+      )!,
       dailyNewLimit: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}daily_new_limit'],
@@ -3250,7 +3276,8 @@ class Setting extends DataClass implements Insertable<Setting> {
   final String id;
   final String nativeLang;
   final String learningLang;
-  final int dailyNewLimit;
+  final int dailyNewLimit;  final String glossMode;
+
   final int dailyReviewLimit;
   final bool reminderEnabled;
   final String reminderTime;
@@ -3266,7 +3293,8 @@ class Setting extends DataClass implements Insertable<Setting> {
     required this.id,
     required this.nativeLang,
     required this.learningLang,
-    required this.dailyNewLimit,
+    required this.dailyNewLimit,    required this.glossMode,
+
     required this.dailyReviewLimit,
     required this.reminderEnabled,
     required this.reminderTime,
@@ -3284,7 +3312,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['native_lang'] = Variable<String>(nativeLang);
-    map['learning_lang'] = Variable<String>(learningLang);
+    map['learning_lang'] = Variable<String>(learningLang);    map['gloss_mode'] = Variable<String>(glossMode);
     map['daily_new_limit'] = Variable<int>(dailyNewLimit);
     map['daily_review_limit'] = Variable<int>(dailyReviewLimit);
     map['reminder_enabled'] = Variable<bool>(reminderEnabled);
@@ -3310,7 +3338,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     return SettingsCompanion(
       id: Value(id),
       nativeLang: Value(nativeLang),
-      learningLang: Value(learningLang),
+      learningLang: Value(learningLang),      glossMode: Value(glossMode),
       dailyNewLimit: Value(dailyNewLimit),
       dailyReviewLimit: Value(dailyReviewLimit),
       reminderEnabled: Value(reminderEnabled),
@@ -3340,7 +3368,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     return Setting(
       id: serializer.fromJson<String>(json['id']),
       nativeLang: serializer.fromJson<String>(json['nativeLang']),
-      learningLang: serializer.fromJson<String>(json['learningLang']),
+      learningLang: serializer.fromJson<String>(json['learningLang']),      glossMode: serializer.fromJson<String>(json['glossMode']),
       dailyNewLimit: serializer.fromJson<int>(json['dailyNewLimit']),
       dailyReviewLimit: serializer.fromJson<int>(json['dailyReviewLimit']),
       reminderEnabled: serializer.fromJson<bool>(json['reminderEnabled']),
@@ -3361,7 +3389,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'nativeLang': serializer.toJson<String>(nativeLang),
-      'learningLang': serializer.toJson<String>(learningLang),
+      'learningLang': serializer.toJson<String>(learningLang),      'glossMode': serializer.toJson<String>(glossMode),
       'dailyNewLimit': serializer.toJson<int>(dailyNewLimit),
       'dailyReviewLimit': serializer.toJson<int>(dailyReviewLimit),
       'reminderEnabled': serializer.toJson<bool>(reminderEnabled),
@@ -3381,7 +3409,8 @@ class Setting extends DataClass implements Insertable<Setting> {
     String? id,
     String? nativeLang,
     String? learningLang,
-    int? dailyNewLimit,
+    int? dailyNewLimit,    String? glossMode,
+
     int? dailyReviewLimit,
     bool? reminderEnabled,
     String? reminderTime,
@@ -3397,7 +3426,8 @@ class Setting extends DataClass implements Insertable<Setting> {
     id: id ?? this.id,
     nativeLang: nativeLang ?? this.nativeLang,
     learningLang: learningLang ?? this.learningLang,
-    dailyNewLimit: dailyNewLimit ?? this.dailyNewLimit,
+    dailyNewLimit: dailyNewLimit ?? this.dailyNewLimit,    glossMode: glossMode ?? this.glossMode,
+
     dailyReviewLimit: dailyReviewLimit ?? this.dailyReviewLimit,
     reminderEnabled: reminderEnabled ?? this.reminderEnabled,
     reminderTime: reminderTime ?? this.reminderTime,
@@ -3423,6 +3453,9 @@ class Setting extends DataClass implements Insertable<Setting> {
       learningLang: data.learningLang.present
           ? data.learningLang.value
           : this.learningLang,
+      glossMode: data.glossMode.present
+          ? data.glossMode.value
+          : this.glossMode,
       dailyNewLimit: data.dailyNewLimit.present
           ? data.dailyNewLimit.value
           : this.dailyNewLimit,
@@ -3462,6 +3495,7 @@ class Setting extends DataClass implements Insertable<Setting> {
           ..write('id: $id, ')
           ..write('nativeLang: $nativeLang, ')
           ..write('learningLang: $learningLang, ')
+          ..write('glossMode: $glossMode, ')
           ..write('dailyNewLimit: $dailyNewLimit, ')
           ..write('dailyReviewLimit: $dailyReviewLimit, ')
           ..write('reminderEnabled: $reminderEnabled, ')
@@ -3483,6 +3517,7 @@ class Setting extends DataClass implements Insertable<Setting> {
     id,
     nativeLang,
     learningLang,
+    glossMode,
     dailyNewLimit,
     dailyReviewLimit,
     reminderEnabled,
@@ -3503,7 +3538,8 @@ class Setting extends DataClass implements Insertable<Setting> {
           other.id == this.id &&
           other.nativeLang == this.nativeLang &&
           other.learningLang == this.learningLang &&
-          other.dailyNewLimit == this.dailyNewLimit &&
+          other.dailyNewLimit == this.dailyNewLimit &&          other.glossMode == this.glossMode &&
+
           other.dailyReviewLimit == this.dailyReviewLimit &&
           other.reminderEnabled == this.reminderEnabled &&
           other.reminderTime == this.reminderTime &&
@@ -3521,7 +3557,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   final Value<String> id;
   final Value<String> nativeLang;
   final Value<String> learningLang;
-  final Value<int> dailyNewLimit;
+  final Value<int> dailyNewLimit;  final Value<String> glossMode;
+
   final Value<int> dailyReviewLimit;
   final Value<bool> reminderEnabled;
   final Value<String> reminderTime;
@@ -3538,7 +3575,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     this.id = const Value.absent(),
     this.nativeLang = const Value.absent(),
     this.learningLang = const Value.absent(),
-    this.dailyNewLimit = const Value.absent(),
+    this.dailyNewLimit = const Value.absent(),    this.glossMode = const Value.absent(),
+
     this.dailyReviewLimit = const Value.absent(),
     this.reminderEnabled = const Value.absent(),
     this.reminderTime = const Value.absent(),
@@ -3556,7 +3594,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     this.id = const Value.absent(),
     this.nativeLang = const Value.absent(),
     this.learningLang = const Value.absent(),
-    this.dailyNewLimit = const Value.absent(),
+    this.dailyNewLimit = const Value.absent(),    this.glossMode = const Value.absent(),
+
     this.dailyReviewLimit = const Value.absent(),
     this.reminderEnabled = const Value.absent(),
     this.reminderTime = const Value.absent(),
@@ -3574,7 +3613,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     Expression<String>? id,
     Expression<String>? nativeLang,
     Expression<String>? learningLang,
-    Expression<int>? dailyNewLimit,
+    Expression<int>? dailyNewLimit,    Expression<String>? glossMode,
+
     Expression<int>? dailyReviewLimit,
     Expression<bool>? reminderEnabled,
     Expression<String>? reminderTime,
@@ -3591,7 +3631,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (nativeLang != null) 'native_lang': nativeLang,
-      if (learningLang != null) 'learning_lang': learningLang,
+      if (learningLang != null) 'learning_lang': learningLang,      if (glossMode != null) 'gloss_mode': glossMode,
       if (dailyNewLimit != null) 'daily_new_limit': dailyNewLimit,
       if (dailyReviewLimit != null) 'daily_review_limit': dailyReviewLimit,
       if (reminderEnabled != null) 'reminder_enabled': reminderEnabled,
@@ -3612,7 +3652,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     Value<String>? id,
     Value<String>? nativeLang,
     Value<String>? learningLang,
-    Value<int>? dailyNewLimit,
+    Value<int>? dailyNewLimit,    Value<String>? glossMode,
+
     Value<int>? dailyReviewLimit,
     Value<bool>? reminderEnabled,
     Value<String>? reminderTime,
@@ -3630,7 +3671,8 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
       id: id ?? this.id,
       nativeLang: nativeLang ?? this.nativeLang,
       learningLang: learningLang ?? this.learningLang,
-      dailyNewLimit: dailyNewLimit ?? this.dailyNewLimit,
+      dailyNewLimit: dailyNewLimit ?? this.dailyNewLimit,      glossMode: glossMode ?? this.glossMode,
+
       dailyReviewLimit: dailyReviewLimit ?? this.dailyReviewLimit,
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       reminderTime: reminderTime ?? this.reminderTime,
@@ -3657,6 +3699,9 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
     }
     if (learningLang.present) {
       map['learning_lang'] = Variable<String>(learningLang.value);
+    }
+    if (glossMode.present) {
+      map['gloss_mode'] = Variable<String>(glossMode.value);
     }
     if (dailyNewLimit.present) {
       map['daily_new_limit'] = Variable<int>(dailyNewLimit.value);
@@ -3706,6 +3751,7 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
           ..write('id: $id, ')
           ..write('nativeLang: $nativeLang, ')
           ..write('learningLang: $learningLang, ')
+          ..write('glossMode: $glossMode, ')
           ..write('dailyNewLimit: $dailyNewLimit, ')
           ..write('dailyReviewLimit: $dailyReviewLimit, ')
           ..write('reminderEnabled: $reminderEnabled, ')
@@ -6358,7 +6404,8 @@ typedef $$SettingsTableCreateCompanionBuilder = SettingsCompanion Function({
   Value<String> id,
   Value<String> nativeLang,
   Value<String> learningLang,
-  Value<int> dailyNewLimit,
+  Value<int> dailyNewLimit,  Value<String> glossMode,
+
   Value<int> dailyReviewLimit,
   Value<bool> reminderEnabled,
   Value<String> reminderTime,
@@ -6376,7 +6423,8 @@ typedef $$SettingsTableUpdateCompanionBuilder = SettingsCompanion Function({
   Value<String> id,
   Value<String> nativeLang,
   Value<String> learningLang,
-  Value<int> dailyNewLimit,
+  Value<int> dailyNewLimit,  Value<String> glossMode,
+
   Value<int> dailyReviewLimit,
   Value<bool> reminderEnabled,
   Value<String> reminderTime,
@@ -6412,6 +6460,10 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<String> get learningLang => $composableBuilder(
     column: $table.learningLang,
+    builder: (column) => ColumnFilters(column),
+  );
+  ColumnFilters<String> get glossMode => $composableBuilder(
+    column: $table.glossMode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6499,6 +6551,10 @@ class $$SettingsTableOrderingComposer
     column: $table.learningLang,
     builder: (column) => ColumnOrderings(column),
   );
+  ColumnOrderings<String> get glossMode => $composableBuilder(
+    column: $table.glossMode,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get dailyNewLimit => $composableBuilder(
     column: $table.dailyNewLimit,
@@ -6580,6 +6636,10 @@ class $$SettingsTableAnnotationComposer
 
   GeneratedColumn<String> get learningLang => $composableBuilder(
     column: $table.learningLang,
+    builder: (column) => column,
+  );
+  GeneratedColumn<String> get glossMode => $composableBuilder(
+    column: $table.glossMode,
     builder: (column) => column,
   );
 

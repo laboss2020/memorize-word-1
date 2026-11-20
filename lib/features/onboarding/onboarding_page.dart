@@ -393,6 +393,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   for (final option in _options) ...[
                     _PlacementOption(
                       option: option,
+                      glossMode:
+                          ref.watch(settingsProvider).value?.glossMode ?? 'zh',
                       picked: _picked,
                       correctId: word.id,
                       onTap: () => _pick(option),
@@ -497,12 +499,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 class _PlacementOption extends StatelessWidget {
   const _PlacementOption({
     required this.option,
+    required this.glossMode,
     required this.picked,
     required this.correctId,
     required this.onTap,
   });
 
   final Word option;
+  final String glossMode;
   final String? picked;
   final String correctId;
   final VoidCallback onTap;
@@ -531,7 +535,11 @@ class _PlacementOption extends StatelessWidget {
       ),
       onPressed: answered ? null : onTap,
       child: Text(
-        meaningsToLine(parseMeanings(option.meanings)),
+        meaningsLine(
+          option.meanings,
+          glossMode: glossMode,
+          learningLang: option.language,
+        ),
         style: Theme.of(context).textTheme.bodyLarge,
       ),
     );

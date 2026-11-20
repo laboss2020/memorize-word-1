@@ -56,6 +56,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(sessionControllerProvider);
     final notifier = ref.read(sessionControllerProvider.notifier);
+    final settings = ref.watch(settingsProvider).value;
+    final glossMode = settings?.glossMode ?? 'zh';
 
     // 新卡/听写/填空：切到新题时自动播报发音（听写只给声音不给文字）。
     ref.listen<StudySessionState>(sessionControllerProvider, (prev, next) {
@@ -116,6 +118,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                     StudyMode.newCard => _NewCardView(
                         item: state.current!,
                         feedback: state.feedback,
+                        glossMode: glossMode,
+                        learningLang: state.language,
                         onConfirm: notifier.answerNewCard,
                         onNext: notifier.next,
                         onSpeak: () => _speak(state.current!.word.headword,
@@ -123,6 +127,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                     StudyMode.choice => _ChoiceView(
                         item: state.current!,
                         feedback: state.feedback,
+                        glossMode: glossMode,
+                        learningLang: state.language,
                         onPick: notifier.answerChoicePick,
                         onNext: notifier.next,
                         onSpeak: () => _speak(state.current!.word.headword,
@@ -169,6 +175,8 @@ class _NewCardView extends StatelessWidget {
     required this.onConfirm,
     required this.onNext,
     required this.onSpeak,
+    required this.glossMode,
+    required this.learningLang,
     this.feedback,
   });
 
@@ -176,12 +184,18 @@ class _NewCardView extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onNext;
   final VoidCallback onSpeak;
+  final String glossMode;
+  final String learningLang;
   final ItemFeedback? feedback;
 
   @override
   Widget build(BuildContext context) {
     final word = item.word;
-    final meanings = parseMeanings(word.meanings);
+    final meanings = selectMeanings(
+      word.meanings,
+      glossMode: glossMode,
+      learningLang: learningLang,
+    );
     final examples = parseExamples(word.examples);
 
     return SingleChildScrollView(
@@ -224,9 +238,15 @@ class _NewCardView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(e.text),
-                    if (e.translation != null) ...[
+                    if (translationFor(e,
+                            glossMode: glossMode,
+                            learningLang: learningLang) !=
+                        null) ...[
                       const SizedBox(height: 4),
-                      Text(e.translation!,
+                      Text(
+                          translationFor(e,
+                              glossMode: glossMode,
+                              learningLang: learningLang)!,
                           style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ],
@@ -257,6 +277,8 @@ class _ChoiceView extends StatelessWidget {
     required this.onPick,
     required this.onNext,
     required this.onSpeak,
+    required this.glossMode,
+    required this.learningLang,
   });
 
   final SessionItemState item;
@@ -264,6 +286,8 @@ class _ChoiceView extends StatelessWidget {
   final ValueChanged<Word> onPick;
   final VoidCallback onNext;
   final VoidCallback onSpeak;
+  final String glossMode;
+  final String learningLang;
 
   @override
   Widget build(BuildContext context) {
@@ -301,6 +325,8 @@ class _ChoiceView extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 12),
               child: _OptionButton(
                 option: option,
+                glossMode: glossMode,
+                learningLang: learningLang,
                 markedWrong: item.wrongPickIds.contains(option.id),
                 showCorrect: isFeedback && option.id == word.id,
                 disabled: isFeedback || item.wrongPickIds.contains(option.id),
@@ -320,6 +346,8 @@ class _ChoiceView extends StatelessWidget {
 class _OptionButton extends StatelessWidget {
   const _OptionButton({
     required this.option,
+    required this.glossMode,
+    required this.learningLang,
     required this.markedWrong,
     required this.showCorrect,
     required this.disabled,
@@ -327,6 +355,8 @@ class _OptionButton extends StatelessWidget {
   });
 
   final Word option;
+  final String glossMode;
+  final String learningLang;
   final bool markedWrong;
   final bool showCorrect;
   final bool disabled;
@@ -354,7 +384,11 @@ class _OptionButton extends StatelessWidget {
       ),
       onPressed: disabled ? null : onTap,
       child: Text(
-        meaningsToLine(parseMeanings(option.meanings)),
+        meaningsLine(
+          option.meanings,
+          glossMode: glossMode,
+          learningLang: learningLang,
+        ),
         style: Theme.of(context).textTheme.bodyLarge,
       ),
     );

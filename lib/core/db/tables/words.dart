@@ -15,7 +15,7 @@ class Words extends Table {
   TextColumn get phonetic => text().nullable()(); // 英语音标
   // JSON: [{"lang":"zh","def":"..."}]，释义语言可扩展
   TextColumn get meanings => text()();
-  // JSON: [{"text":"...","translation":"..."}]，1-3 条例句，可为 '[]'
+  // JSON: [{"text":"...","translations":{"zh":"..."}}]，1-3 条例句，可为 '[]'
   TextColumn get examples => text()();
   RealColumn get difficulty => real()(); // 1.0-6.0，定级与抽题依据
   TextColumn get level => text()(); // 英: A1..C2；日: N5..N1

@@ -48,6 +48,30 @@ class SettingsPage extends ConsumerWidget {
                     },
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('释义语言',
+                          style: Theme.of(context).textTheme.bodyLarge),
+                      const SizedBox(height: 4),
+                      Text(_glossSubtitle(settings.learningLang),
+                          style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 8),
+                      SegmentedButton<String>(
+                        segments: _glossSegments(settings.learningLang),
+                        selected: {settings.glossMode},
+                        onSelectionChanged: (selection) {
+                          _update(
+                              ref,
+                              SettingsCompanion(
+                                  glossMode: Value(selection.first)));
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 StepperTile(
                   title: '每日新词上限',
                   value: settings.dailyNewLimit,
@@ -148,6 +172,21 @@ class SettingsPage extends ConsumerWidget {
   void _update(WidgetRef ref, SettingsCompanion patch) {
     ref.read(dbProvider).settingsDao.updateSettings(patch,
         nowMs: DateTime.now().millisecondsSinceEpoch);
+  }
+
+  /// 释义语言选项随学习语言变化：学日语→中文/英文/中英双语；学英语→中文/日文/中日双语。
+  List<ButtonSegment<String>> _glossSegments(String learningLang) {
+    final alt = learningLang == 'ja' ? '英文' : '日文';
+    return [
+      const ButtonSegment(value: 'zh', label: Text('中文')),
+      ButtonSegment(value: 'alt', label: Text(alt)),
+      ButtonSegment(value: 'both', label: Text('中${alt}双语')),
+    ];
+  }
+
+  String _glossSubtitle(String learningLang) {
+    final alt = learningLang == 'ja' ? '英文' : '日文';
+    return '单词释义与例句翻译显示：中文 / $alt / 双语';
   }
 
   /// 导出：生成备份 → 移动端系统分享 / 桌面端另存为。

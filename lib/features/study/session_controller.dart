@@ -425,6 +425,9 @@ class SessionController extends Notifier<StudySessionState> {
 
   String? _lastWordId; // 刚完结题的词（回收步进卡时避免立即重复）
 
+  Future<Setting> _getSettings() =>
+      _db.settingsDao.getOrCreate(nowMs: DateTime.now().millisecondsSinceEpoch);
+
   Future<void> _presentItem(
     StudySessionState s,
     QueueItem item, {
@@ -520,7 +523,15 @@ class SessionController extends Notifier<StudySessionState> {
       final distractors = await _db.wordDao.distractorsFor(word, count: 3);
       options = [...distractors, word]..shuffle();
     } else if (mode == StudyMode.cloze) {
-      final cloze = buildCloze(word);
+      final settings = await _getSettings();
+      final cloze = buildCloze(
+        word,
+        pickTranslation: (e) => translationFor(
+          e,
+          glossMode: settings.glossMode,
+          learningLang: word.language,
+        ),
+      );
       if (cloze == null) {
         mode = StudyMode.dictation; // 无可挖空例句：降级听写
       } else {
@@ -583,6 +594,7 @@ class SessionController extends Notifier<StudySessionState> {
     );
 
     final shownAt = s.itemShownAtMs;
+    final settings = await _getSettings();
     state = s.copyWith(
       phase: SessionPhase.feedback,
       completedCount: s.completedCount + 1,
@@ -595,7 +607,11 @@ class SessionController extends Notifier<StudySessionState> {
         repracticed:
             cur.item.mode == StudyMode.choice && cur.wrongPickIds.isNotEmpty,
         correctAnswer: answerOverride ??
-            meaningsToLine(parseMeanings(cur.word.meanings)),
+            meaningsLine(
+              cur.word.meanings,
+              glossMode: settings.glossMode,
+              learningLang: cur.word.language,
+            ),
       ),
     );
   }
