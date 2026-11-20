@@ -269,12 +269,12 @@ class SessionController extends Notifier<StudySessionState> {
     await _flushMinutes(s, nowMs);
   }
 
-  /// 新卡首呈：看过词义后确认，固定 Good。
+  /// 新卡首呈：看过词义后确认，固定 Good；自评无对错反馈，直接进下一题。
   Future<void> answerNewCard() async {
     final cur = state.current;
     if (cur == null || cur.item.mode != StudyMode.newCard) return;
     if (state.phase != SessionPhase.presenting) return;
-    await _finalize(rating: rateNewCard().value, correct: true);
+    await _finalize(rating: rateNewCard().value, correct: true, showFeedback: false);
   }
 
   /// 听写提交。日语接受假名读音或词头本身（罗马字输入归一为假名比对）。
@@ -374,6 +374,11 @@ class SessionController extends Notifier<StudySessionState> {
   Future<void> next() async {
     final s = state;
     if (s.phase != SessionPhase.feedback) return;
+    await _advance(s);
+  }
+
+  /// 推进到队列下一项；队列耗尽则回收步进卡或结束会话。
+  Future<void> _advance(StudySessionState s) async {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     if (s.sessionId != null) {
@@ -555,10 +560,12 @@ class SessionController extends Notifier<StudySessionState> {
   }
 
   /// 队列项完结：FSRS 结算 + 最终日志 + 统计 + 反馈态。
+  /// [showFeedback] 为 false（新卡自评）时不进反馈态，直接推进下一题。
   Future<void> _finalize({
     required int rating,
     required bool correct,
     String? answerOverride,
+    bool showFeedback = true,
   }) async {
     final s = state;
     final cur = s.current!;
@@ -594,13 +601,19 @@ class SessionController extends Notifier<StudySessionState> {
     );
 
     final shownAt = s.itemShownAtMs;
-    final settings = await _getSettings();
-    state = s.copyWith(
-      phase: SessionPhase.feedback,
+    final settled = s.copyWith(
       completedCount: s.completedCount + 1,
       correctCount: s.correctCount + (correct ? 1 : 0),
       sessionElapsedMs:
           s.sessionElapsedMs + (shownAt == null ? 0 : nowMs - shownAt),
+    );
+    if (!showFeedback) {
+      await _advance(settled);
+      return;
+    }
+    final settings = await _getSettings();
+    state = settled.copyWith(
+      phase: SessionPhase.feedback,
       feedback: ItemFeedback(
         correct: correct,
         rating: rating,

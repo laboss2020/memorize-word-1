@@ -117,11 +117,9 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                   child: switch (state.current?.item.mode) {
                     StudyMode.newCard => _NewCardView(
                         item: state.current!,
-                        feedback: state.feedback,
                         glossMode: glossMode,
                         learningLang: state.language,
                         onConfirm: notifier.answerNewCard,
-                        onNext: notifier.next,
                         onSpeak: () => _speak(state.current!.word.headword,
                             state.language, '${state.current!.word.id}#manual')),
                     StudyMode.choice => _ChoiceView(
@@ -173,20 +171,16 @@ class _NewCardView extends StatelessWidget {
   const _NewCardView({
     required this.item,
     required this.onConfirm,
-    required this.onNext,
     required this.onSpeak,
     required this.glossMode,
     required this.learningLang,
-    this.feedback,
   });
 
   final SessionItemState item;
   final VoidCallback onConfirm;
-  final VoidCallback onNext;
   final VoidCallback onSpeak;
   final String glossMode;
   final String learningLang;
-  final ItemFeedback? feedback;
 
   @override
   Widget build(BuildContext context) {
@@ -238,16 +232,11 @@ class _NewCardView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(e.text),
-                    if (translationFor(e,
-                            glossMode: glossMode,
-                            learningLang: learningLang) !=
-                        null) ...[
+                    for (final tr in translationsForAll(e,
+                        glossMode: glossMode,
+                        learningLang: learningLang)) ...[
                       const SizedBox(height: 4),
-                      Text(
-                          translationFor(e,
-                              glossMode: glossMode,
-                              learningLang: learningLang)!,
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Text(tr, style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ],
                 ),
@@ -256,12 +245,8 @@ class _NewCardView extends StatelessWidget {
             const SizedBox(height: 8),
           ],
           const SizedBox(height: 16),
-          // 答完（feedback 阶段）显示反馈卡与"下一题"；否则停在确认按钮。
-          // 此前 feedback 阶段无 UI，按钮残留但已失效，导致卡死。
-          if (feedback != null) ...[
-            _FeedbackCard(feedback: feedback!, onNext: onNext),
-          ] else
-            FilledButton(onPressed: onConfirm, child: const Text('记住了，继续')),
+          // 新卡自评不进 feedback 阶段：确认后由 controller 直接推进下一题。
+          FilledButton(onPressed: onConfirm, child: const Text('记住了，继续')),
         ],
       ),
     );

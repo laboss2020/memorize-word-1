@@ -133,3 +133,27 @@ String? translationFor(
     _ => tr['zh'] ?? tr.values.first,
   };
 }
+
+/// 按释义语言模式取例句翻译列表（'both' 时中文在前+辅助语言，去重）。
+/// 所选语言无数据时回退全部，空翻译返回空列表。
+List<String> translationsForAll(
+  WordExample example, {
+  required String glossMode,
+  required String learningLang,
+}) {
+  final tr = example.translations;
+  if (tr.isEmpty) return const [];
+  final alt = altGlossLang(learningLang);
+  final wanted = switch (glossMode) {
+    'alt' => [alt],
+    'both' => ['zh', alt],
+    _ => ['zh'],
+  };
+  final picked = <String>[];
+  for (final lang in wanted) {
+    final text = tr[lang];
+    if (text != null && !picked.contains(text)) picked.add(text);
+  }
+  if (picked.isNotEmpty) return picked;
+  return tr.values.toList();
+}

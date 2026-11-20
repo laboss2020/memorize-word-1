@@ -98,6 +98,60 @@ void main() {
     });
   });
 
+  group('translationsForAll', () {
+    test("mode 'both'：中文在前 + 辅助语言，各一条", () {
+      const json =
+          '[{"text":"走る","translations":{"en":"to run","zh":"跑"}}]';
+      final e = parseExamples(json).single;
+      expect(
+        translationsForAll(e, glossMode: 'both', learningLang: 'ja'),
+        ['跑', 'to run'],
+      );
+    });
+
+    test("mode 'both'：缺中文时只显示现有翻译", () {
+      const json = '[{"text":"走る","translations":{"en":"to run"}}]';
+      final e = parseExamples(json).single;
+      expect(
+        translationsForAll(e, glossMode: 'both', learningLang: 'ja'),
+        ['to run'],
+      );
+    });
+
+    test("mode 'zh'：只取中文，缺失回退全部", () {
+      const json =
+          '[{"text":"走る","translations":{"en":"to run","zh":"跑"}}]';
+      final e = parseExamples(json).single;
+      expect(
+          translationsForAll(e, glossMode: 'zh', learningLang: 'ja'), ['跑']);
+
+      const noZh = '[{"text":"走る","translations":{"en":"to run"}}]';
+      expect(
+        translationsForAll(
+            parseExamples(noZh).single, glossMode: 'zh', learningLang: 'ja'),
+        ['to run'],
+      );
+    });
+
+    test('重复文本去重', () {
+      const json =
+          '[{"text":"I run.","translations":{"zh":"我跑","en":"我跑"}}]';
+      final e = parseExamples(json).single;
+      expect(
+        translationsForAll(e, glossMode: 'both', learningLang: 'ja'),
+        ['我跑'],
+      );
+    });
+
+    test('无翻译返回空列表', () {
+      const json = '[{"text":"I run.","translations":{}}]';
+      final e = parseExamples(json).single;
+      expect(
+          translationsForAll(e, glossMode: 'both', learningLang: 'ja'),
+          isEmpty);
+    });
+  });
+
   test('altGlossLang', () {
     expect(altGlossLang('ja'), 'en');
     expect(altGlossLang('en'), 'ja');

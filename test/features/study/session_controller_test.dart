@@ -64,9 +64,10 @@ void main() {
     final wordId = currentWord()!.id;
     await notifier().answerNewCard();
 
-    expect(st().phase, SessionPhase.feedback);
-    expect(st().feedback!.correct, isTrue);
-    expect(st().feedback!.rating, 3);
+    // 新卡自评无对错反馈：直接进入下一题（不再有 feedback 阶段）。
+    expect(st().phase, SessionPhase.presenting);
+    expect(st().completedCount, 1);
+    expect(st().feedback, isNull);
 
     final progress = await db.progressDao.getProgress(wordId);
     expect(progress, isNotNull);
@@ -85,11 +86,9 @@ void main() {
   test('选择题：首答对 → Good；再对一次（历史已对）→ Easy', () async {
     await start();
     // 跳过前面的 new_card，把第一个复习前的状态构造出来：
-    // 直接用 answerNewCard 完成新词，再注入一条 review 队列项。
+    // 直接用 answerNewCard 完成新词（自动推进到下一题）。
     await notifier().answerNewCard();
-    await notifier().next(); // feedback → presenting（下一题仍是 new_card）
     await notifier().answerNewCard();
-    await notifier().next();
 
     // 手动补一个 choice 项（构造复习场景）：给一个尚未学过的词加进度。
     final remaining = await db.wordDao.nextNewWords(

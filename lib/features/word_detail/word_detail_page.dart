@@ -97,7 +97,7 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
             const SizedBox(height: 8),
             for (final e in examples)
               Builder(builder: (_) {
-                final tr = translationFor(
+                final trs = translationsForAll(
                   e,
                   glossMode: glossMode,
                   learningLang: word.language,
@@ -105,7 +105,9 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
                 return Card(
                   child: ListTile(
                     title: Text(e.text),
-                    subtitle: tr == null ? null : Text(tr),
+                    subtitle: trs.isEmpty
+                        ? null
+                        : Text(trs.join('\n')),
                     trailing: IconButton(
                       icon: const Icon(Icons.volume_up_outlined),
                       onPressed: () =>
