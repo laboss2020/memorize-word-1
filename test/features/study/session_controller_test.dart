@@ -83,6 +83,32 @@ void main() {
     expect(stats.totalCount, 1);
   });
 
+  test('新卡「上一个」回看不重计进度，继续后正常推进', () async {
+    await start();
+    final w1 = currentWord()!.id;
+    await notifier().answerNewCard(); // → 第二词
+    expect(st().completedCount, 1);
+    final w2 = currentWord()!.id;
+    expect(w2, isNot(w1));
+
+    await notifier().previousCard(); // 回看第一词
+    expect(st().replaying, isTrue);
+    expect(currentWord()!.id, w1);
+    expect(st().completedCount, 1);
+
+    await notifier().answerNewCard(); // 回看态下确认无效
+    expect(st().replaying, isTrue);
+    expect(currentWord()!.id, w1);
+
+    await notifier().continueFromReplay(); // 继续 → 回到第二词
+    expect(st().replaying, isFalse);
+    expect(currentWord()!.id, w2);
+    expect(st().completedCount, 1); // 未重复计分
+
+    await notifier().previousCard(); // 回看栈已空
+    expect(currentWord()!.id, w2);
+  });
+
   test('选择题：首答对 → Good；再对一次（历史已对）→ Easy', () async {
     await start();
     // 跳过前面的 new_card，把第一个复习前的状态构造出来：

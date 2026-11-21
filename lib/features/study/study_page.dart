@@ -40,11 +40,9 @@ class _StudyPageState extends ConsumerState<StudyPage> {
     await notifier.startSession(language: settings?.learningLang ?? 'en');
   }
 
-  Future<void> _speak(String text, String language, String wordId) async {
-    if (_spokenWordId == wordId) return;
-    _spokenWordId = wordId;
-    await _tts.speak(text, language: language);
-  }
+  /// 手动点击发音：不做去重，每次点击都播报。
+  Future<void> _speakNow(String text, String language) =>
+      _tts.speak(text, language: language);
 
   @override
   void dispose() {
@@ -69,7 +67,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
           m != StudyMode.cloze) {
         return;
       }
-      final key = '${cur.word.id}#${next.completedCount}';
+      final key =
+          '${cur.word.id}#${next.completedCount}${next.replaying ? '#replay' : ''}';
       if (key == _spokenWordId) return;
       _spokenWordId = key;
       _tts.speak(cur.word.headword, language: next.language);
@@ -119,9 +118,14 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                         item: state.current!,
                         glossMode: glossMode,
                         learningLang: state.language,
-                        onConfirm: notifier.answerNewCard,
-                        onSpeak: () => _speak(state.current!.word.headword,
-                            state.language, '${state.current!.word.id}#manual')),
+                        replaying: state.replaying,
+                        canGoBack: state.backStack.isNotEmpty,
+                        onConfirm: state.replaying
+                            ? notifier.continueFromReplay
+                            : notifier.answerNewCard,
+                        onPrevious: notifier.previousCard,
+                        onSpeak: () => _speakNow(
+                            state.current!.word.headword, state.language)),
                     StudyMode.choice => _ChoiceView(
                         item: state.current!,
                         feedback: state.feedback,
@@ -129,8 +133,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                         learningLang: state.language,
                         onPick: notifier.answerChoicePick,
                         onNext: notifier.next,
-                        onSpeak: () => _speak(state.current!.word.headword,
-                            state.language, '${state.current!.word.id}#manual')),
+                        onSpeak: () => _speakNow(
+                            state.current!.word.headword, state.language)),
                     StudyMode.dictation => _DictationView(
                         key: ValueKey(
                             'dictation-${state.current!.word.id}-${state.completedCount}'),
@@ -138,8 +142,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                         feedback: state.feedback,
                         onSubmit: notifier.answerDictation,
                         onNext: notifier.next,
-                        onSpeak: () => _speak(state.current!.word.headword,
-                            state.language, '${state.current!.word.id}#manual')),
+                        onSpeak: () => _speakNow(
+                            state.current!.word.headword, state.language)),
                     StudyMode.cloze => _ClozeView(
                         key: ValueKey(
                             'cloze-${state.current!.word.id}-${state.completedCount}'),
@@ -147,8 +151,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                         feedback: state.feedback,
                         onSubmit: notifier.answerCloze,
                         onNext: notifier.next,
-                        onSpeak: () => _speak(state.current!.word.headword,
-                            state.language, '${state.current!.word.id}#manual')),
+                        onSpeak: () => _speakNow(
+                            state.current!.word.headword, state.language)),
                     _ => const Center(child: CircularProgressIndicator()),
                   },
                 ),
@@ -171,16 +175,24 @@ class _NewCardView extends StatelessWidget {
   const _NewCardView({
     required this.item,
     required this.onConfirm,
+    required this.onPrevious,
     required this.onSpeak,
     required this.glossMode,
     required this.learningLang,
+    required this.replaying,
+    required this.canGoBack,
   });
 
   final SessionItemState item;
   final VoidCallback onConfirm;
+  final VoidCallback onPrevious;
   final VoidCallback onSpeak;
   final String glossMode;
   final String learningLang;
+
+  /// 正在回看上一个词（确认按钮为「继续」，不再计分）。
+  final bool replaying;
+  final bool canGoBack;
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +258,21 @@ class _NewCardView extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           // 新卡自评不进 feedback 阶段：确认后由 controller 直接推进下一题。
-          FilledButton(onPressed: onConfirm, child: const Text('记住了，继续')),
+          Row(
+            children: [
+              OutlinedButton(
+                onPressed: canGoBack ? onPrevious : null,
+                child: const Text('上一个'),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: onConfirm,
+                  child: Text(replaying ? '继 续' : '记住了，继续'),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

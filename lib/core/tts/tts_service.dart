@@ -11,10 +11,12 @@ class TtsService {
 
   final FlutterTts _engine;
   bool _initialized = false;
+  String? _lastLang;
 
   Future<void> _ensureInit() async {
     if (_initialized) return;
     await _engine.setSharedInstance(true);
+    await _engine.setSpeechRate(0.45); // 稍慢，便于跟读（只需设置一次）
     _initialized = true;
   }
 
@@ -23,10 +25,12 @@ class TtsService {
     await _ensureInit();
     final code = ttsLanguageCodes[language] ?? language;
     try {
-      final available = await _engine.isLanguageAvailable(code);
-      if (available != true) return false;
-      await _engine.setLanguage(code);
-      await _engine.setSpeechRate(0.45); // 稍慢，便于跟读
+      if (code != _lastLang) {
+        final available = await _engine.isLanguageAvailable(code);
+        if (available != true) return false;
+        await _engine.setLanguage(code);
+        _lastLang = code;
+      }
       await _engine.speak(text);
       return true;
     } catch (_) {

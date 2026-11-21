@@ -89,6 +89,8 @@ class StudySessionState {
     this.itemShownAtMs,
     this.sessionElapsedMs = 0,
     this.bumpedMinutes = 0,
+    this.backStack = const [],
+    this.replaying = false,
     this.errorMessage,
   });
 
@@ -105,6 +107,12 @@ class StudySessionState {
   final int? itemShownAtMs;
   final int sessionElapsedMs; // 已累计答题毫秒数
   final int bumpedMinutes; // 已写入 daily_stats 的分钟数
+
+  /// 新卡学习中已确认的词（供「上一个」回看；仅内存，断点续学不保留）。
+  final List<QueueItem> backStack;
+
+  /// 正在回看上一个词（重看不重计进度，确认后继续正常推进）。
+  final bool replaying;
 
   final String? errorMessage;
 
@@ -128,6 +136,9 @@ class StudySessionState {
     bool clearItemShownAt = false,
     int? sessionElapsedMs,
     int? bumpedMinutes,
+    List<QueueItem>? backStack,
+    bool clearBackStack = false,
+    bool? replaying,
     String? errorMessage,
   }) {
     return StudySessionState(
@@ -143,6 +154,10 @@ class StudySessionState {
           clearItemShownAt ? null : (itemShownAtMs ?? this.itemShownAtMs),
       sessionElapsedMs: sessionElapsedMs ?? this.sessionElapsedMs,
       bumpedMinutes: bumpedMinutes ?? this.bumpedMinutes,
+      backStack: clearBackStack
+          ? const []
+          : (backStack ?? this.backStack),
+      replaying: replaying ?? this.replaying,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -256,8 +271,9 @@ class SessionController extends Notifier<StudySessionState> {
     final s = state;
     if (s.sessionId == null) return;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
+    // 回看中的词已完成过，断点只存未开始与当前正常题，避免续学后重复计分。
     final remaining = [
-      if (s.current != null) s.current!.item,
+      if (s.current != null && !s.replaying) s.current!.item,
       ...s.pending,
     ];
     await _db.studyDao.updateSession(
@@ -274,7 +290,27 @@ class SessionController extends Notifier<StudySessionState> {
     final cur = state.current;
     if (cur == null || cur.item.mode != StudyMode.newCard) return;
     if (state.phase != SessionPhase.presenting) return;
+    if (state.replaying) return; // 回看态用 continueFromReplay
     await _finalize(rating: rateNewCard().value, correct: true, showFeedback: false);
+  }
+
+  /// 新卡学习：返回上一个已确认的词重新查看（不重计进度）。
+  Future<void> previousCard() async {
+    final s = state;
+    if (s.phase != SessionPhase.presenting) return;
+    if (s.replaying || s.backStack.isEmpty) return;
+    final s2 = s.copyWith(
+      backStack: s.backStack.sublist(0, s.backStack.length - 1),
+    );
+    await _presentItem(s2, s.backStack.last,
+        remaining: s.pending, replaying: true);
+  }
+
+  /// 回看上一词后点「继续」：恢复正常推进（不出题重计进度）。
+  Future<void> continueFromReplay() async {
+    final s = state;
+    if (!s.replaying || s.phase != SessionPhase.presenting) return;
+    await _advance(s.copyWith(replaying: false));
   }
 
   /// 听写提交。日语接受假名读音或词头本身（罗马字输入归一为假名比对）。
@@ -437,6 +473,7 @@ class SessionController extends Notifier<StudySessionState> {
     StudySessionState s,
     QueueItem item, {
     required List<QueueItem> remaining,
+    bool replaying = false,
   }) async {
     final current = await _loadItem(item, s.language);
     if (current == null) {
@@ -461,6 +498,7 @@ class SessionController extends Notifier<StudySessionState> {
       clearFeedback: true,
       current: current,
       itemShownAtMs: DateTime.now().millisecondsSinceEpoch,
+      replaying: replaying,
     );
   }
 
@@ -608,7 +646,8 @@ class SessionController extends Notifier<StudySessionState> {
           s.sessionElapsedMs + (shownAt == null ? 0 : nowMs - shownAt),
     );
     if (!showFeedback) {
-      await _advance(settled);
+      // 新卡自评：记录到回看栈后直接推进下一题。
+      await _advance(settled.copyWith(backStack: [...settled.backStack, cur.item]));
       return;
     }
     final settings = await _getSettings();
