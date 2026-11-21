@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../strings.dart';
+
 /// 底部导航壳：主页 / 词库 / 统计 / 设置。
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
@@ -9,28 +11,29 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
       body: shell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: shell.goBranch,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: '主页'),
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home),
+              label: s.navHome),
           NavigationDestination(
-              icon: Icon(Icons.menu_book_outlined),
-              selectedIcon: Icon(Icons.menu_book),
-              label: '词库'),
+              icon: const Icon(Icons.menu_book_outlined),
+              selectedIcon: const Icon(Icons.menu_book),
+              label: s.navLibrary),
           NavigationDestination(
-              icon: Icon(Icons.insights_outlined),
-              selectedIcon: Icon(Icons.insights),
-              label: '统计'),
+              icon: const Icon(Icons.insights_outlined),
+              selectedIcon: const Icon(Icons.insights),
+              label: s.navStats),
           NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: '设置'),
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings),
+              label: s.navSettings),
         ],
       ),
     );

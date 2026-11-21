@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../app/strings.dart';
+
 class Suggestion {
   const Suggestion({
     required this.id,
@@ -52,7 +54,7 @@ class SuggestionEngine {
 
   static const _maxCards = 2;
 
-  static List<Suggestion> build(SuggestionInputs input) {
+  static List<Suggestion> build(SuggestionInputs input, AppStrings s) {
     final out = <Suggestion>[];
 
     // 1. 长时间未学 → 复习减半回归。
@@ -62,9 +64,9 @@ class SuggestionEngine {
       out.add(Suggestion(
         id: 'comeback',
         icon: Icons.waving_hand_outlined,
-        title: '欢迎回来',
-        body: '休息了 $absent 天，建议把复习上限降到 $half，轻松找回节奏。',
-        actionLabel: '复习减半',
+        title: s.suggestionWelcomeBack,
+        body: s.suggestionComebackBody(absent, half),
+        actionLabel: s.suggestionHalveReviews,
       ));
     }
 
@@ -73,9 +75,9 @@ class SuggestionEngine {
       out.add(Suggestion(
         id: 'clear-reviews',
         icon: Icons.notifications_active_outlined,
-        title: '复习积压了',
-        body: '有 ${input.dueCount} 个单词等着复习，先清复习再学新词效率更高。',
-        actionLabel: '开始学习',
+        title: s.suggestionBacklog,
+        body: s.suggestionBacklogBody(input.dueCount),
+        actionLabel: s.startStudy,
       ));
     }
 
@@ -85,10 +87,9 @@ class SuggestionEngine {
       out.add(Suggestion(
         id: 'scale-up',
         icon: Icons.trending_up_outlined,
-        title: '状态不错',
-        body: '连续 ${input.streak} 天打卡，正确率 ${accuracy.round()}%，'
-            '可以适当加量。',
-        actionLabel: '新词 +5',
+        title: s.suggestionGoodShape,
+        body: s.suggestionScaleUpBody(input.streak, accuracy.round()),
+        actionLabel: s.suggestionNewPlus5,
       ));
     }
 

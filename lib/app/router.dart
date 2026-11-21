@@ -15,6 +15,7 @@ import '../features/study/study_page.dart';
 import '../features/word_detail/word_detail_page.dart';
 import 'providers.dart';
 import 'shell/app_shell.dart';
+import 'strings.dart';
 
 /// 全局路由（含 onboarding 守卫）。
 final routerProvider = Provider<GoRouter>((ref) {
@@ -56,8 +57,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'deck/:deckId',
                     builder: (context, state) => DeckWordsPage(
                       deckId: state.pathParameters['deckId']!,
-                      deckName:
-                          state.uri.queryParameters['name'] ?? '词书',
+                      deckName: state.uri.queryParameters['name'] ??
+                          AppStrings.of(context).fallbackDeckName,
                     ),
                   ),
                   GoRoute(

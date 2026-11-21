@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
+import '../../app/strings.dart';
 import '../../core/db/app_database.dart';
 import 'home_providers.dart';
 import 'suggestion_engine.dart';
@@ -15,6 +16,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final t = AppStrings.of(context);
     final settings = ref.watch(settingsProvider).value;
     final language = settings?.learningLang ?? 'en';
     final dueCount = ref.watch(dueCountProvider(language)).value ?? 0;
@@ -26,29 +28,33 @@ class HomePage extends ConsumerWidget {
     final newDone = todayStats?.newCount ?? 0;
     final newLeft = (newLimit - newDone).clamp(0, newLimit);
 
-    final suggestions = SuggestionEngine.build(SuggestionInputs(
-      streak: streak,
-      dueCount: dueCount,
-      recentAccuracy: ref.watch(recentAccuracyProvider).value,
-      daysSinceLastStudy: ref.watch(daysSinceLastStudyProvider).value,
-      dailyReviewLimit: settings?.dailyReviewLimit ?? 50,
-    ));
+    final suggestions = SuggestionEngine.build(
+      SuggestionInputs(
+        streak: streak,
+        dueCount: dueCount,
+        recentAccuracy: ref.watch(recentAccuracyProvider).value,
+        daysSinceLastStudy: ref.watch(daysSinceLastStudyProvider).value,
+        dailyReviewLimit: settings?.dailyReviewLimit ?? 50,
+      ),
+      t,
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('背单词')),
+      appBar: AppBar(title: Text(t.appName)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Row(
             children: [
-              Text(language == 'ja' ? '今天也来学点日语吧' : '今天也来学点英语吧',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const Spacer(),
+              Expanded(
+                child: Text(t.todayMotivation(language),
+                    style: Theme.of(context).textTheme.titleLarge),
+              ),
               if (streak > 0)
                 Chip(
                   avatar: Icon(Icons.local_fire_department,
                       size: 18, color: scheme.primary),
-                  label: Text('$streak 天'),
+                  label: Text(t.streakDays(streak)),
                   visualDensity: VisualDensity.compact,
                 ),
             ],
@@ -61,16 +67,18 @@ class HomePage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('今日任务',
+                  Text(t.todayTask,
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       _StatChip(
-                          label: '待复习', value: '$dueCount', color: scheme.tertiary),
+                          label: t.toReview,
+                          value: '$dueCount',
+                          color: scheme.tertiary),
                       const SizedBox(width: 8),
                       _StatChip(
-                          label: '新词',
+                          label: t.newWords,
                           value: newLeft > 0 ? '$newLeft' : '✓',
                           color: scheme.primary),
                     ],
@@ -82,18 +90,19 @@ class HomePage extends ConsumerWidget {
                         ? FilledButton.icon(
                             onPressed: () => context.push('/study'),
                             icon: const Icon(Icons.play_circle_outline),
-                            label: Text('继续学习 (${openSession.completedCount} 已完成)'),
+                            label:
+                                Text(t.continueStudy(openSession.completedCount)),
                           )
                         : (dueCount > 0 || newLeft > 0)
                             ? FilledButton.icon(
                                 onPressed: () => context.push('/study'),
                                 icon: const Icon(Icons.play_arrow),
-                                label: const Text('开始学习'),
+                                label: Text(t.startStudy),
                               )
                             : FilledButton.tonalIcon(
                                 onPressed: null,
                                 icon: const Icon(Icons.check_circle_outline),
-                                label: const Text('今日任务已完成'),
+                                label: Text(t.allDoneToday),
                               ),
                   ),
                 ],
@@ -101,18 +110,18 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           // 建议卡（规则模板）
-          for (final s in suggestions) ...[
+          for (final sug in suggestions) ...[
             const SizedBox(height: 12),
-            _SuggestionCard(suggestion: s),
+            _SuggestionCard(suggestion: sug),
           ],
           const SizedBox(height: 12),
           // AI 对话入口（一期占位）
           Card(
             child: ListTile(
               leading: Icon(Icons.smart_toy_outlined, color: scheme.primary),
-              title: const Text('AI 对话练习'),
-              subtitle: const Text('用新学的单词和 AI 聊天'),
-              trailing: const _SoonBadge(),
+              title: Text(t.aiPractice),
+              subtitle: Text(t.aiPracticeSub),
+              trailing: _SoonBadge(text: t.comingSoon),
               onTap: () => context.push('/ai'),
             ),
           ),
@@ -229,7 +238,9 @@ class _StatChip extends StatelessWidget {
 }
 
 class _SoonBadge extends StatelessWidget {
-  const _SoonBadge();
+  const _SoonBadge({required this.text});
+
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +250,7 @@ class _SoonBadge extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text('即将上线',
+      child: Text(text,
           style: Theme.of(context)
               .textTheme
               .labelSmall

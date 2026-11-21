@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
+import '../../app/strings.dart';
 import '../../core/db/app_database.dart' show Word;
 import '../../core/fsrs/rating_mapper.dart' show StudyMode;
 import '../../core/tts/tts_service.dart';
@@ -86,14 +87,17 @@ class _StudyPageState extends ConsumerState<StudyPage> {
             onPressed: () => _exitToHome(notifier),
           ),
           title: switch (state.phase) {
-            SessionPhase.finished => const Text('本次完成'),
-            _ => Text(state.sessionId == null ? '学习' : '学习 · ${state.language == 'ja' ? '日语' : '英语'}'),
+            SessionPhase.finished =>
+              Text(AppStrings.of(context).sessionComplete),
+            _ => Text(state.sessionId == null
+                ? AppStrings.of(context).studyTitle
+                : '${AppStrings.of(context).studyTitle} · ${AppStrings.of(context).langName(state.language)}'),
           },
         ),
         body: switch (state.phase) {
           SessionPhase.loading => const Center(child: CircularProgressIndicator()),
           SessionPhase.error => _ErrorView(
-              message: state.errorMessage ?? '加载失败',
+              message: state.errorMessage ?? AppStrings.of(context).loadFailed,
               onRetry: () => notifier.startSession(language: state.language),
             ),
           SessionPhase.finished => _SummaryView(state: state),
@@ -204,12 +208,14 @@ class _NewCardView extends StatelessWidget {
     );
     final examples = parseExamples(word.examples);
 
+    final s = AppStrings.of(context);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('新词', style: Theme.of(context).textTheme.labelMedium),
+          Text(s.newWordLabel, style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -262,13 +268,13 @@ class _NewCardView extends StatelessWidget {
             children: [
               OutlinedButton(
                 onPressed: canGoBack ? onPrevious : null,
-                child: const Text('上一个'),
+                child: Text(s.previousBtn),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
                   onPressed: onConfirm,
-                  child: Text(replaying ? '继 续' : '记住了，继续'),
+                  child: Text(replaying ? s.replayContinue : s.gotItContinue),
                 ),
               ),
             ],
@@ -310,7 +316,7 @@ class _ChoiceView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('选出正确释义',
+          Text(AppStrings.of(context).pickMeaning,
               style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 8),
           Row(
@@ -455,12 +461,13 @@ class _DictationViewState extends State<_DictationView> {
     final feedback = widget.feedback;
     final isJa = word.language == 'ja';
 
+    final s = AppStrings.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('听写：听发音拼写单词',
+          Text(s.dictationPrompt,
               style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 24),
           Center(
@@ -473,7 +480,7 @@ class _DictationViewState extends State<_DictationView> {
           ),
           const SizedBox(height: 4),
           Center(
-            child: Text('点击重听', style: Theme.of(context).textTheme.bodySmall),
+            child: Text(s.tapToReplay, style: Theme.of(context).textTheme.bodySmall),
           ),
           const SizedBox(height: 24),
           TextField(
@@ -486,7 +493,7 @@ class _DictationViewState extends State<_DictationView> {
             onSubmitted: (_) => _submit(),
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
-              labelText: isJa ? '输入读音（假名/罗马字）' : '输入拼写',
+              labelText: isJa ? s.inputJaReading : s.inputSpelling,
             ),
           ),
           if (isJa) ...[
@@ -501,18 +508,18 @@ class _DictationViewState extends State<_DictationView> {
                     ? () => setState(() => _hintUsed = true)
                     : null,
                 icon: const Icon(Icons.lightbulb_outline),
-                label: const Text('提示'),
+                label: Text(s.hint),
               ),
               const Spacer(),
               FilledButton(
                 onPressed: feedback == null ? _submit : null,
-                child: const Text('提交'),
+                child: Text(s.submit),
               ),
             ],
           ),
           if (_hintUsed && feedback == null) ...[
             const SizedBox(height: 8),
-            Text('提示：${firstCharHint(_targetText)}',
+            Text(s.hintText(firstCharHint(_targetText)),
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -579,12 +586,13 @@ class _ClozeViewState extends State<_ClozeView> {
     final feedback = widget.feedback;
     final isJa = item.word.language == 'ja';
 
+    final s = AppStrings.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('填空：补全句中缺失的词',
+          Text(s.clozePrompt,
               style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 16),
           Card(
@@ -612,7 +620,7 @@ class _ClozeViewState extends State<_ClozeView> {
                     ? () => setState(() => _hintUsed = true)
                     : null,
                 icon: const Icon(Icons.lightbulb_outline),
-                label: const Text('提示'),
+                label: Text(s.hint),
               ),
               const Spacer(),
               IconButton.filledTonal(
@@ -622,7 +630,7 @@ class _ClozeViewState extends State<_ClozeView> {
             ],
           ),
           if (_hintUsed && feedback == null)
-            Text('提示：${firstCharHint(_targetText)}',
+            Text(s.hintText(firstCharHint(_targetText)),
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -638,7 +646,7 @@ class _ClozeViewState extends State<_ClozeView> {
             onSubmitted: (_) => _submit(),
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
-              labelText: isJa ? '输入读音（假名/罗马字）' : '输入缺失的词',
+              labelText: isJa ? s.inputJaReading : s.inputMissingWord,
             ),
           ),
           if (isJa) ...[
@@ -650,7 +658,7 @@ class _ClozeViewState extends State<_ClozeView> {
             const SizedBox(height: 4),
             _FeedbackCard(feedback: feedback, onNext: widget.onNext),
           ] else
-            FilledButton(onPressed: _submit, child: const Text('提交')),
+            FilledButton(onPressed: _submit, child: Text(s.submit)),
         ],
       ),
     );
@@ -675,6 +683,7 @@ class _FeedbackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return Card(
       color: feedback.correct
           ? Colors.green.withValues(alpha: 0.12)
@@ -686,12 +695,12 @@ class _FeedbackCard extends StatelessWidget {
           children: [
             Text(
               feedback.correct
-                  ? (feedback.repracticed ? '重练通过 ✓' : '回答正确 ✓')
-                  : '正确答案：${feedback.correctAnswer ?? "-"}',
+                  ? (feedback.repracticed ? s.repracticedCorrect : s.answerCorrect)
+                  : s.correctAnswer(feedback.correctAnswer ?? '-'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
-            FilledButton(onPressed: onNext, child: const Text('下一题')),
+            FilledButton(onPressed: onNext, child: Text(s.nextQuestion)),
           ],
         ),
       ),
@@ -814,6 +823,7 @@ class _SummaryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final accuracy =
         state.completedCount == 0 ? 0 : (state.correctCount * 100 / state.completedCount).round();
     return Center(
@@ -823,17 +833,20 @@ class _SummaryView extends StatelessWidget {
           Icon(Icons.celebration_outlined,
               size: 72, color: Theme.of(context).colorScheme.primary),
           const SizedBox(height: 16),
-          Text(state.completedCount == 0 ? '今日任务已完成' : '完成 ${state.completedCount} 项',
+          Text(
+              state.completedCount == 0
+                  ? s.allDoneToday
+                  : s.completedN(state.completedCount),
               style: Theme.of(context).textTheme.headlineSmall),
           if (state.completedCount > 0) ...[
             const SizedBox(height: 8),
-            Text('首答正确率 $accuracy%',
+            Text(s.firstTryAccuracy(accuracy),
                 style: Theme.of(context).textTheme.bodyLarge),
           ],
           const SizedBox(height: 24),
           FilledButton(
             onPressed: () => context.go('/home'),
-            child: const Text('返回主页'),
+            child: Text(s.backHome),
           ),
         ],
       ),
@@ -860,7 +873,8 @@ class _ErrorView extends StatelessWidget {
             child: Text(message, textAlign: TextAlign.center),
           ),
           const SizedBox(height: 16),
-          OutlinedButton(onPressed: onRetry, child: const Text('重试')),
+          OutlinedButton(
+              onPressed: onRetry, child: Text(AppStrings.of(context).retry)),
         ],
       ),
     );

@@ -5,11 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../app/providers.dart';
+import '../../app/strings.dart';
 import '../../app/widgets/stepper_tile.dart';
 import '../../core/db/app_database.dart';
 import '../../core/fsrs/rating_mapper.dart' show StudyMode;
 import '../../core/placement/placement_engine.dart';
-import '../../core/utils/levels.dart';
 import '../../core/utils/word_content.dart';
 
 /// 引导流程：三页介绍（可跳过）→ 选语言 → [定级测试 | 跳过] → 每日目标 → 完成。
@@ -216,22 +216,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   Widget _buildIntro(BuildContext context) {
     final pageCtrl = _pageCtrl!;
+    final s = AppStrings.of(context);
     final pages = [
-      (
-        Icons.school_outlined,
-        '科学记单词',
-        '间隔重复（FSRS）自动安排每次复习，在快忘记的时候提醒你。',
-      ),
-      (
-        Icons.style_outlined,
-        '三种练习模式',
-        '选择题认词、听写拼词、例句填空，多角度巩固记忆。',
-      ),
-      (
-        Icons.offline_bolt_outlined,
-        '完全离线',
-        '词库与学习数据全部保存在本地，无需注册，随时可用。',
-      ),
+      (Icons.school_outlined, s.intro1Title, s.intro1Desc),
+      (Icons.style_outlined, s.intro2Title, s.intro2Desc),
+      (Icons.offline_bolt_outlined, s.intro3Title, s.intro3Desc),
     ];
 
     return Scaffold(
@@ -298,12 +287,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       }
                     },
                     child: Text(
-                        _introPage < pages.length - 1 ? '下一步' : '开始使用'),
+                        _introPage < pages.length - 1
+                            ? s.nextStep
+                            : s.getStarted),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => setState(() => _step = _Step.language),
-                    child: const Text('跳过'),
+                    child: Text(s.skip),
                   ),
                 ],
               ),
@@ -317,8 +308,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   // ---- 步骤 2：选语言 ----
 
   Widget _buildLanguage(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('选择学习语言')),
+      appBar: AppBar(title: Text(s.chooseLearningLang)),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -326,27 +318,29 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           children: [
             const SizedBox(height: 24),
             SegmentedButton<String>(
-              segments: const [
+              segments: [
                 ButtonSegment(
-                    value: 'en', label: Text('英语'), icon: Icon(Icons.abc)),
+                    value: 'en',
+                    label: Text(s.langName('en')),
+                    icon: const Icon(Icons.abc)),
                 ButtonSegment(
                     value: 'ja',
-                    label: Text('日语'),
-                    icon: Icon(Icons.translate)),
+                    label: Text(s.langName('ja')),
+                    icon: const Icon(Icons.translate)),
               ],
               selected: {_language},
-              onSelectionChanged: (s) => setState(() => _language = s.first),
+              onSelectionChanged: (sel) => setState(() => _language = sel.first),
             ),
             const SizedBox(height: 48),
             FilledButton.icon(
               onPressed: _startPlacement,
               icon: const Icon(Icons.quiz_outlined),
-              label: const Text('开始定级测试（约 1 分钟）'),
+              label: Text(s.startPlacement),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () => setState(() => _step = _Step.goal),
-              child: const Text('跳过测试，从入门级开始'),
+              child: Text(s.skipTestFromBeginner),
             ),
           ],
         ),
@@ -358,9 +352,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   Widget _buildPlacement(BuildContext context) {
     final word = _quizWord;
+    final s = AppStrings.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('定级测试 · ${levelDisplayName(_language, _engine.currentLevel)}'),
+        title: Text(s.placementTitle(
+            s.levelName(_engine.currentLevel))),
         actions: [
           TextButton(
             onPressed: () {
@@ -370,7 +366,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 setState(() => _step = _Step.goal);
               }
             },
-            child: const Text('跳过'),
+            child: Text(s.skip),
           ),
         ],
       ),
@@ -381,7 +377,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('选出正确释义（第 ${_engine.askedCount + 1} 题）',
+                  Text(s.pickMeaningN(_engine.askedCount + 1),
                       style: Theme.of(context).textTheme.labelMedium),
                   const SizedBox(height: 16),
                   Text(word.headword,
@@ -405,7 +401,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   if (_picked != null)
                     FilledButton(
                       onPressed: _nextAfterAnswer,
-                      child: const Text('下一题'),
+                      child: Text(s.nextQuestion),
                     ),
                 ],
               ),
@@ -416,8 +412,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   // ---- 步骤 4：定级结果 ----
 
   Widget _buildPlacementResult(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('定级结果')),
+      appBar: AppBar(title: Text(s.placementResult)),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -428,13 +425,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 size: 72, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 16),
             Text(
-              '建议从「${levelDisplayName(_language, _engine.resultLevel)}」开始',
+              s.suggestedStart(s.levelName(_engine.resultLevel)),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              '之后可在设置中重新测试，或调整每日目标。',
+              s.resultFootnote,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
@@ -443,12 +440,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               onPressed: widget.retest
                   ? _complete
                   : () => setState(() => _step = _Step.goal),
-              child: const Text('就这样开始'),
+              child: Text(s.startWithThis),
             ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: _startPlacement,
-              child: const Text('重新测试'),
+              child: Text(s.retest),
             ),
           ],
         ),
@@ -459,27 +456,28 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   // ---- 步骤 5：每日目标 ----
 
   Widget _buildGoal(BuildContext context) {
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('每日目标')),
+      appBar: AppBar(title: Text(s.dailyGoal)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           StepperTile(
-            title: '每天学新词',
+            title: s.dailyNew,
             value: _newLimit,
             min: 3,
             max: 50,
             step: 1,
-            unit: '词',
+            unit: s.unitWords,
             onChanged: (v) => setState(() => _newLimit = v),
           ),
           StepperTile(
-            title: '每天复习上限',
+            title: s.dailyReview,
             value: _reviewLimit,
             min: 10,
             max: 200,
             step: 10,
-            unit: '词',
+            unit: s.unitWords,
             onChanged: (v) => setState(() => _reviewLimit = v),
           ),
           const SizedBox(height: 24),
@@ -487,7 +485,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: FilledButton(
               onPressed: _complete,
-              child: const Text('完成，开始学习'),
+              child: Text(s.finishStart),
             ),
           ),
         ],

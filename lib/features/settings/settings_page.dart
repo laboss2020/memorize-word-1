@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../app/providers.dart';
+import '../../app/strings.dart';
 import '../../app/widgets/stepper_tile.dart';
 import '../../core/db/app_database.dart' show SettingsCompanion;
 import '../../core/sync/export_service.dart';
@@ -25,21 +26,24 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider).value;
+    final s = AppStrings.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: AppBar(title: Text(s.navSettings)),
       body: settings == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
-                _section(context, '学习'),
+                _section(context, s.sectionStudy),
                 ListTile(
-                  title: const Text('学习语言'),
-                  subtitle: const Text('切换后从下次学习生效'),
+                  title: Text(s.learningLang),
+                  subtitle: Text(s.learningLangSub),
                   trailing: SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'en', label: Text('英语')),
-                      ButtonSegment(value: 'ja', label: Text('日语')),
+                    segments: [
+                      ButtonSegment(
+                          value: 'en', label: Text(s.langName('en'))),
+                      ButtonSegment(
+                          value: 'ja', label: Text(s.langName('ja'))),
                     ],
                     selected: {settings.learningLang},
                     onSelectionChanged: (selection) {
@@ -53,14 +57,14 @@ class SettingsPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('释义语言',
+                      Text(s.glossLang,
                           style: Theme.of(context).textTheme.bodyLarge),
                       const SizedBox(height: 4),
-                      Text(_glossSubtitle(settings.learningLang),
+                      Text(s.glossSubtitle(settings.learningLang),
                           style: Theme.of(context).textTheme.bodySmall),
                       const SizedBox(height: 8),
                       SegmentedButton<String>(
-                        segments: _glossSegments(settings.learningLang),
+                        segments: _glossSegments(settings.learningLang, s),
                         selected: {settings.glossMode},
                         onSelectionChanged: (selection) {
                           _update(
@@ -73,30 +77,30 @@ class SettingsPage extends ConsumerWidget {
                   ),
                 ),
                 StepperTile(
-                  title: '每日新词上限',
+                  title: s.dailyNewLimit,
                   value: settings.dailyNewLimit,
                   min: 3,
                   max: 50,
                   step: 1,
-                  unit: '词',
+                  unit: s.unitWords,
                   onChanged: (v) =>
                       _update(ref, SettingsCompanion(dailyNewLimit: Value(v))),
                 ),
                 StepperTile(
-                  title: '每日复习上限',
+                  title: s.dailyReviewLimit,
                   value: settings.dailyReviewLimit,
                   min: 10,
                   max: 200,
                   step: 10,
-                  unit: '词',
+                  unit: s.unitWords,
                   onChanged: (v) => _update(
                       ref, SettingsCompanion(dailyReviewLimit: Value(v))),
                 ),
                 const Divider(height: 32),
-                _section(context, '提醒'),
+                _section(context, s.sectionReminders),
                 SwitchListTile(
-                  title: const Text('每日复习提醒'),
-                  subtitle: const Text('到点发送本地通知'),
+                  title: Text(s.dailyReminder),
+                  subtitle: Text(s.dailyReminderSub),
                   value: settings.reminderEnabled,
                   onChanged: (v) async {
                     _update(
@@ -108,15 +112,14 @@ class SettingsPage extends ConsumerWidget {
                           .requestPermission();
                       if (!granted && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('未获得通知权限，可在系统设置中开启')),
+                          SnackBar(content: Text(s.notifPermissionDenied)),
                         );
                       }
                     }
                   },
                 ),
                 ListTile(
-                  title: const Text('提醒时间'),
+                  title: Text(s.reminderTime),
                   enabled: settings.reminderEnabled,
                   trailing: Text(_fmtTime(settings.reminderTime),
                       style: Theme.of(context).textTheme.titleMedium),
@@ -137,29 +140,29 @@ class SettingsPage extends ConsumerWidget {
                   },
                 ),
                 const Divider(height: 32),
-                _section(context, '更多'),
+                _section(context, s.sectionMore),
                 ListTile(
                   leading: const Icon(Icons.quiz_outlined),
-                  title: const Text('重新定级测试'),
-                  subtitle: const Text('用 1 分钟重新估计你的词汇水平'),
+                  title: Text(s.retestPlacement),
+                  subtitle: Text(s.retestPlacementSub),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/placement'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.ios_share_outlined),
-                  title: const Text('导出数据'),
-                  subtitle: const Text('学习进度与设置导出为 JSON 备份'),
+                  title: Text(s.exportData),
+                  subtitle: Text(s.exportDataSub),
                   onTap: () => _exportData(context, ref),
                 ),
                 ListTile(
                   leading: const Icon(Icons.download_outlined),
-                  title: const Text('导入数据'),
-                  subtitle: const Text('从备份文件恢复（自动先备份当前数据）'),
+                  title: Text(s.importData),
+                  subtitle: Text(s.importDataSub),
                   onTap: () => _importData(context, ref),
                 ),
                 ListTile(
                   leading: const Icon(Icons.info_outline),
-                  title: const Text('关于与致谢'),
+                  title: Text(s.aboutCredits),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/about'),
                 ),
@@ -174,25 +177,23 @@ class SettingsPage extends ConsumerWidget {
         nowMs: DateTime.now().millisecondsSinceEpoch);
   }
 
-  /// 释义语言选项随学习语言变化：学日语→中文/英文/中英双语；学英语→中文/日文/中日双语。
-  List<ButtonSegment<String>> _glossSegments(String learningLang) {
-    final alt = learningLang == 'ja' ? '英文' : '日文';
+  /// 释义语言选项随学习语言变化：学日语→中文/英文/双语；学英语→中文/日文/双语。
+  List<ButtonSegment<String>> _glossSegments(
+      String learningLang, AppStrings s) {
     return [
-      const ButtonSegment(value: 'zh', label: Text('中文')),
-      ButtonSegment(value: 'alt', label: Text(alt)),
-      ButtonSegment(value: 'both', label: Text('中$alt双语')),
+      ButtonSegment(value: 'zh', label: Text(s.chineseName)),
+      ButtonSegment(
+          value: 'alt', label: Text(s.altGlossName(learningLang))),
+      ButtonSegment(
+          value: 'both', label: Text(s.glossBothLabel(learningLang))),
     ];
-  }
-
-  String _glossSubtitle(String learningLang) {
-    final alt = learningLang == 'ja' ? '英文' : '日文';
-    return '单词释义与例句翻译显示：中文 / $alt / 双语';
   }
 
   /// 导出：生成备份 → 移动端系统分享 / 桌面端另存为。
   Future<void> _exportData(BuildContext context, WidgetRef ref) async {
     // 跨 await 使用 messenger，避免 context 过 async gap。
     final messenger = ScaffoldMessenger.of(context);
+    final s = AppStrings.of(context);
     try {
       final db = ref.read(dbProvider);
       final exporter =
@@ -210,17 +211,18 @@ class SettingsPage extends ConsumerWidget {
           mimeType: 'application/json',
         );
         messenger.showSnackBar(SnackBar(
-          content: Text(saved == null ? '已取消' : '已保存到 $saved'),
+          content: Text(saved == null ? s.cancelled : s.savedTo(saved)),
         ));
       }
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('导出失败：$e')));
+      messenger.showSnackBar(SnackBar(content: Text(s.exportFailed(e))));
     }
   }
 
   /// 导入：选文件 → 确认 → 自动备份当前数据 → 恢复。
   Future<void> _importData(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
+    final s = AppStrings.of(context);
     try {
       final picked = await FilePicker.pickFiles(
         type: FileType.custom,
@@ -235,20 +237,16 @@ class SettingsPage extends ConsumerWidget {
       final ok = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('导入备份'),
-          content: const Text(
-              '将恢复备份中的学习进度与设置：\n'
-              '· 相同数据以较新的一方为准\n'
-              '· 本地没有的学习记录会被补入\n\n'
-              '导入前会自动备份当前数据。'),
+          title: Text(s.importBackupTitle),
+          content: Text(s.importBackupBody),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('取消'),
+              child: Text(s.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('导入'),
+              child: Text(s.importBtn),
             ),
           ],
         ),
@@ -264,16 +262,16 @@ class SettingsPage extends ConsumerWidget {
 
       final report = await ImportService(db).importJson(json);
       messenger.showSnackBar(SnackBar(
-        content: Text(
-          '已导入 ${report.applied} 条'
-          '${report.skippedUnknownWord > 0 ? '，跳过未知词记录 ${report.skippedUnknownWord} 条' : ''}'
-          '${report.skippedStale > 0 ? '，保留本地较新数据 ${report.skippedStale} 条' : ''}',
-        ),
+        content: Text(s.importDone(
+          report.applied,
+          report.skippedUnknownWord,
+          report.skippedStale,
+        )),
       ));
     } on BackupFormatException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('导入失败：$e')));
+      messenger.showSnackBar(SnackBar(content: Text(s.importFailed(e))));
     }
   }
 

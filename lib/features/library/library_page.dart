@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
+import '../../app/strings.dart';
 import '../../core/db/app_database.dart' show Deck;
 
 /// 词库浏览：按当前学习语言的词书分组（M3 加搜索与单词列表）。
@@ -16,10 +17,11 @@ class LibraryPage extends ConsumerWidget {
     final decks = ref.watch(decksProvider(language));
 
     return Scaffold(
-      appBar: AppBar(title: Text(language == 'ja' ? '词库 · 日语' : '词库 · 英语')),
+      appBar: AppBar(title: Text(AppStrings.of(context).libraryTitle(language))),
       body: decks.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('加载失败: $e')),
+        error: (e, _) => Center(
+            child: Text(AppStrings.of(context).loadFailedWith(e))),
         data: (list) => ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: list.length,

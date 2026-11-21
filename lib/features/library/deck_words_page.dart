@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
+import '../../app/strings.dart';
 import '../../core/db/app_database.dart';
 import '../../core/utils/word_content.dart';
 
@@ -22,7 +23,8 @@ class DeckWordsPage extends ConsumerWidget {
       appBar: AppBar(title: Text(deckName)),
       body: words.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('加载失败: $e')),
+        error: (e, _) => Center(
+            child: Text(AppStrings.of(context).loadFailedWith(e))),
         data: (list) => ListView.builder(
           itemCount: list.length,
           itemBuilder: (context, i) {

@@ -1,8 +1,11 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../app/strings.dart';
 import '../db/app_database.dart';
 
 /// 每日复习提醒（本地通知，每天固定时刻循环）。
@@ -13,8 +16,10 @@ class ReminderService {
   ReminderService();
 
   static const dailyNotificationId = 42;
-  static const _title = '背单词';
-  static const _body = '今天的复习安排好了，花几分钟巩固一下吧。';
+
+  /// 通知文案按系统语言（无 BuildContext）。
+  static AppStrings get _l => AppStrings(
+      PlatformDispatcher.instance.locale.languageCode);
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -117,20 +122,21 @@ class ReminderService {
           mode = AndroidScheduleMode.inexactAllowWhileIdle;
         }
       }
+      final l = _l;
       await _plugin.zonedSchedule(
         id: dailyNotificationId,
-        title: _title,
-        body: _body,
+        title: l.appName,
+        body: l.reminderBody,
         scheduledDate: _nextOccurrence(hour, minute),
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             'daily_reminder',
-            '每日复习提醒',
-            channelDescription: '每天固定时间提醒复习单词',
+            l.reminderChannelName,
+            channelDescription: l.reminderChannelDesc,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
           ),
-          iOS: DarwinNotificationDetails(),
+          iOS: const DarwinNotificationDetails(),
         ),
         androidScheduleMode: mode,
         matchDateTimeComponents: DateTimeComponents.time,

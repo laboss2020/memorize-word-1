@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:memorize_word/app/strings.dart';
 import 'package:memorize_word/features/home/suggestion_engine.dart';
+
+final _zh = AppStrings('zh');
 
 SuggestionInputs input({
   int streak = 0,
@@ -20,7 +23,7 @@ SuggestionInputs input({
 void main() {
   group('回归卡（7 天未学）', () {
     test('7 天未学 → 建议复习减半', () {
-      final out = SuggestionEngine.build(input(daysSince: 7, reviewLimit: 60));
+      final out = SuggestionEngine.build(input(daysSince: 7, reviewLimit: 60), _zh);
       expect(out, hasLength(1));
       expect(out.first.id, 'comeback');
       expect(out.first.body, contains('30')); // 60/2
@@ -28,46 +31,46 @@ void main() {
     });
 
     test('6 天未学不触发', () {
-      expect(SuggestionEngine.build(input(daysSince: 6)), isEmpty);
+      expect(SuggestionEngine.build(input(daysSince: 6), _zh), isEmpty);
     });
 
     test('从未学过不触发', () {
-      expect(SuggestionEngine.build(input()), isEmpty);
+      expect(SuggestionEngine.build(input(), _zh), isEmpty);
     });
   });
 
   group('清复习卡（逾期 > 20）', () {
     test('21 个到期触发', () {
-      final out = SuggestionEngine.build(input(dueCount: 21));
+      final out = SuggestionEngine.build(input(dueCount: 21), _zh);
       expect(out.single.id, 'clear-reviews');
       expect(out.single.actionLabel, '开始学习');
     });
 
     test('恰好 20 个不触发', () {
-      expect(SuggestionEngine.build(input(dueCount: 20)), isEmpty);
+      expect(SuggestionEngine.build(input(dueCount: 20), _zh), isEmpty);
     });
   });
 
   group('加量卡（连续 ≥5 天且正确率 ≥85%）', () {
     test('达标触发', () {
       final out =
-          SuggestionEngine.build(input(streak: 5, accuracy: 85.0));
+          SuggestionEngine.build(input(streak: 5, accuracy: 85.0), _zh);
       expect(out.single.id, 'scale-up');
       expect(out.single.actionLabel, '新词 +5');
     });
 
     test('连续 4 天不触发', () {
       expect(
-          SuggestionEngine.build(input(streak: 4, accuracy: 90)), isEmpty);
+          SuggestionEngine.build(input(streak: 4, accuracy: 90), _zh), isEmpty);
     });
 
     test('正确率 84.9 不触发', () {
       expect(
-          SuggestionEngine.build(input(streak: 6, accuracy: 84.9)), isEmpty);
+          SuggestionEngine.build(input(streak: 6, accuracy: 84.9), _zh), isEmpty);
     });
 
     test('无正确率数据不触发', () {
-      expect(SuggestionEngine.build(input(streak: 6)), isEmpty);
+      expect(SuggestionEngine.build(input(streak: 6), _zh), isEmpty);
     });
   });
 
@@ -77,12 +80,12 @@ void main() {
       dueCount: 30,
       accuracy: 90,
       daysSince: 9,
-    ));
+    ), _zh);
     expect(out.map((s) => s.id).toList(), ['comeback', 'clear-reviews']);
   });
 
   test('图标为有效 IconData', () {
-    final out = SuggestionEngine.build(input(dueCount: 25));
+    final out = SuggestionEngine.build(input(dueCount: 25), _zh);
     expect(out.single.icon, isA<IconData>());
   });
 }

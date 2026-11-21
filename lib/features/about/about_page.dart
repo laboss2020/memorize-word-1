@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/strings.dart';
+
 /// 关于与致谢：隐私声明 + 词库/算法开源致谢（许可合规必需）。
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -7,59 +9,50 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final s = AppStrings.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('关于与致谢')),
+      appBar: AppBar(title: Text(s.aboutCredits)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('背单词 v1.0.0', style: textTheme.titleMedium),
+          Text('${s.appName} v1.0.0', style: textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text(
-            '一个完全离线的间隔重复记单词应用。'
-            '所有学习数据仅保存在你的设备上，我们没有任何服务器，'
-            '不收集任何数据。',
-            style: textTheme.bodyMedium,
-          ),
+          Text(s.aboutIntro, style: textTheme.bodyMedium),
           const Divider(height: 32),
-          Text('开源致谢', style: textTheme.titleMedium),
+          Text(s.creditsTitle, style: textTheme.titleMedium),
           const SizedBox(height: 8),
-          const _Credit(
+          _Credit(
             name: 'FSRS（open-spaced-repetition/fsrs-dart）',
             license: 'MIT License',
-            desc: 'FSRS-5 间隔重复算法，驱动复习调度。',
+            desc: s.fsrsDesc,
           ),
-          const _Credit(
+          _Credit(
             name: 'ECDICT',
             license: 'MIT License',
-            desc: '英汉字典数据（词头、音标、释义、词性、词频）。',
+            desc: s.ecdictDesc,
           ),
-          const _Credit(
+          _Credit(
             name: 'JMdict / JMnedict（EDRDG）',
             license: 'Electronic Dictionary Research and Development Group',
-            desc: '日语词典数据。本应用是其衍生作品，'
-                '依据 EDRDG 许可协议声明署名：dictionary data provided by JMdict/EDRDG。',
+            desc: s.jmdictDesc,
           ),
-          const _Credit(
+          _Credit(
             name: 'Tatoeba',
             license: 'CC BY 2.0 FR',
-            desc: '例句数据（tatoeba.org）。',
+            desc: s.tatoebaDesc,
           ),
-          const _Credit(
-            name: 'OpenJLPT / JLPT 词表',
-            license: '见项目仓库许可说明',
-            desc: '日语词汇 JLPT 等级划分。',
+          _Credit(
+            name: s.openjlptName,
+            license: s.openjlptLicense,
+            desc: s.openjlptDesc,
           ),
-          const _Credit(
-            name: 'Flutter 及全部开源依赖包',
-            license: '各依其许可',
-            desc: 'drift、flutter_riverpod、go_router、fl_chart、'
-                'flutter_tts、flutter_local_notifications 等。',
+          _Credit(
+            name: s.flutterCreditName,
+            license: s.flutterLicense,
+            desc: s.flutterDesc,
           ),
           const SizedBox(height: 24),
-          Text(
-            '以上数据仅用于构建离线词库，所有处理均在本机完成。',
-            style: textTheme.bodySmall,
-          ),
+          Text(s.aboutFooter, style: textTheme.bodySmall),
           const SizedBox(height: 24),
         ],
       ),

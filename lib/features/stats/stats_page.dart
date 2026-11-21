@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../app/strings.dart';
 import '../../core/db/app_database.dart';
 import '../../core/utils/study_day.dart';
 import 'stats_providers.dart';
@@ -20,7 +21,7 @@ class StatsPage extends ConsumerWidget {
     final mastery = ref.watch(masteryProvider).value;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('统计')),
+      appBar: AppBar(title: Text(AppStrings.of(context).navStats)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -68,6 +69,7 @@ class _StatTiles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final accuracy =
         todayTotal == 0 ? 0 : (todayCorrect * 100 / todayTotal).round();
     final hours = (totalMinutes / 60).toStringAsFixed(1);
@@ -78,25 +80,25 @@ class _StatTiles extends StatelessWidget {
                 icon: Icons.local_fire_department,
                 color: Colors.deepOrange,
                 value: '$streak',
-                label: '连续打卡（天）')),
+                label: s.streakDaysLabel)),
         Expanded(
             child: _StatTile(
                 icon: Icons.today,
                 color: Colors.blue,
                 value: '$todayTotal',
-                label: '今日完成')),
+                label: s.todayDone)),
         Expanded(
             child: _StatTile(
                 icon: Icons.check_circle_outline,
                 color: Colors.green,
                 value: '$accuracy%',
-                label: '今日正确率')),
+                label: s.todayAccuracy)),
         Expanded(
             child: _StatTile(
                 icon: Icons.schedule,
                 color: Colors.purple,
                 value: hours,
-                label: '累计学习（小时）')),
+                label: s.totalHours)),
       ],
     );
   }
@@ -157,7 +159,7 @@ class _BarChartCard extends StatelessWidget {
     final maxVal = bars.fold<double>(4, (a, b) => b > a ? b : a);
 
     return _ChartCard(
-      title: '近 30 天学习量',
+      title: AppStrings.of(context).last30Volume,
       child: SizedBox(
         height: 160,
         child: BarChart(
@@ -215,11 +217,13 @@ class _AccuracyCard extends StatelessWidget {
     }
 
     return _ChartCard(
-      title: '近 30 天正确率（%）',
+      title: AppStrings.of(context).last30Accuracy,
       child: SizedBox(
         height: 140,
         child: spots.isEmpty
-            ? const Center(child: Text('还没有学习记录'))
+            ? Center(
+                child: Text(AppStrings.of(context).noRecordsYet,
+                    style: Theme.of(context).textTheme.bodySmall))
             : LineChart(
                 LineChartData(
                   minY: 0,
@@ -253,8 +257,9 @@ class _MasteryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     const colors = [Colors.grey, Colors.orange, Colors.blue, Colors.green];
-    const labels = ['未学', '学习中', '巩固中', '已掌握'];
+    final labels = s.masteryLabels;
     final values = [
       mastery.fresh.toDouble(),
       mastery.learning.toDouble(),
@@ -264,14 +269,16 @@ class _MasteryCard extends StatelessWidget {
     final total = values.fold<double>(0, (a, b) => a + b);
 
     return _ChartCard(
-      title: '掌握度分布',
+      title: s.masteryDist,
       child: Row(
         children: [
           SizedBox(
             width: 150,
             height: 150,
             child: total == 0
-                ? const Center(child: Text('暂无数据'))
+                ? Center(
+                    child: Text(s.noData,
+                        style: Theme.of(context).textTheme.bodySmall))
                 : PieChart(
                     PieChartData(
                       sectionsSpace: 2,
@@ -352,7 +359,7 @@ class _HeatmapCard extends StatelessWidget {
     }
 
     return _ChartCard(
-      title: '近一年热力图',
+      title: AppStrings.of(context).last365Heatmap,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         reverse: true, // 默认停在最近一周
@@ -395,7 +402,8 @@ class _HeatmapCard extends StatelessWidget {
     }
     final count = byDate[localStudyDay(day)] ?? 0;
     return Tooltip(
-      message: '${day.month}/${day.day}：$count 项',
+      message: AppStrings.of(context)
+          .heatmapTooltip(day.month, day.day, count),
       child: Container(
         width: _cell,
         height: _cell,

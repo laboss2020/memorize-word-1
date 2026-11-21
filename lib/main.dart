@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/providers.dart';
 import 'app/router.dart';
+import 'app/strings.dart';
 import 'app/theme.dart';
 
 void main() {
@@ -26,8 +28,15 @@ class MemorizeWordApp extends ConsumerWidget {
     });
 
     return MaterialApp.router(
-      title: '背单词',
+      onGenerateTitle: (context) => AppStrings.of(context).appName,
       theme: AppTheme.light(),
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('zh'), Locale('en'), Locale('ja')],
       darkTheme: AppTheme.dark(),
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) {
@@ -52,6 +61,13 @@ class _SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: AppTheme.light(),
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('zh'), Locale('en'), Locale('ja')],
       home: Scaffold(
         body: Center(
           child: Column(
@@ -60,7 +76,9 @@ class _SplashScreen extends StatelessWidget {
               Icon(Icons.menu_book_outlined,
                   size: 64, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 24),
-              const Text('背单词', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+              Text(AppStrings.of(context).appName,
+                  style: const TextStyle(
+                      fontSize: 24, fontWeight: FontWeight.w600)),
               const SizedBox(height: 32),
               const CircularProgressIndicator(),
             ],
@@ -79,6 +97,13 @@ class _StartupErrorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: AppTheme.light(),
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('zh'), Locale('en'), Locale('ja')],
       home: Scaffold(
         body: Center(
           child: Column(
@@ -87,7 +112,7 @@ class _StartupErrorScreen extends StatelessWidget {
               Icon(Icons.error_outline,
                   size: 64, color: Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
-              const Text('启动失败，请重启应用'),
+              Text(AppStrings.of(context).startupError),
             ],
           ),
         ),

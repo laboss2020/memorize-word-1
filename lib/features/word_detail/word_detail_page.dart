@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../app/strings.dart';
 import '../../core/db/app_database.dart';
 import '../../core/tts/tts_service.dart';
-import '../../core/utils/levels.dart';
 import '../../core/utils/word_content.dart';
 
 /// 单词详情：释义/例句/发音/进度/历史。
@@ -74,7 +74,7 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
             spacing: 8,
             children: [
               Chip(
-                label: Text(levelDisplayName(word.language, word.level)),
+                label: Text(AppStrings.of(context).levelName(word.level)),
                 visualDensity: VisualDensity.compact,
               ),
               if (word.pos != null)
@@ -93,7 +93,8 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
             ),
           if (examples.isNotEmpty) ...[
             const SizedBox(height: 20),
-            Text('例句', style: Theme.of(context).textTheme.titleSmall),
+            Text(AppStrings.of(context).examples,
+                style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             for (final e in examples)
               Builder(builder: (_) {
@@ -120,10 +121,11 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
           const SizedBox(height: 20),
           if (progress != null) _ProgressCard(progress: progress),
           const SizedBox(height: 20),
-          Text('学习记录', style: Theme.of(context).textTheme.titleSmall),
+          Text(AppStrings.of(context).studyRecords,
+              style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           if (logs.isEmpty)
-            Text('还没有学习记录',
+            Text(AppStrings.of(context).noStudyRecords,
                 style: Theme.of(context).textTheme.bodySmall),
           for (final log in logs)
             ListTile(
@@ -134,7 +136,7 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
                 color: log.correct ? Colors.green : scheme.error,
                 size: 20,
               ),
-              title: Text(modeName(log.mode)),
+              title: Text(AppStrings.of(context).modeName(log.mode)),
               trailing: Text(_fmtTime(log.studiedAt),
                   style: Theme.of(context).textTheme.bodySmall),
             ),
@@ -156,11 +158,11 @@ class _ProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stateNames = {1: '学习中', 2: '复习中', 3: '重学中'};
+    final s = AppStrings.of(context);
     final due = DateTime.fromMillisecondsSinceEpoch(progress.due);
     final dueText = due.isBefore(DateTime.now())
-        ? '已到期'
-        : '${due.difference(DateTime.now()).inDays + 1} 天后复习';
+        ? s.dueNow
+        : s.dueInDays(due.difference(DateTime.now()).inDays + 1);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -168,10 +170,10 @@ class _ProgressCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _ProgressStat(
-                label: '状态', value: stateNames[progress.state] ?? '-'),
-            _ProgressStat(label: '复习次数', value: '${progress.reps}'),
-            _ProgressStat(label: '遗忘次数', value: '${progress.lapses}'),
-            _ProgressStat(label: '下次', value: dueText),
+                label: s.statusLabel, value: s.stateName(progress.state)),
+            _ProgressStat(label: s.repsLabel, value: '${progress.reps}'),
+            _ProgressStat(label: s.lapsesLabel, value: '${progress.lapses}'),
+            _ProgressStat(label: s.nextLabel, value: dueText),
           ],
         ),
       ),
@@ -200,13 +202,3 @@ class _ProgressStat extends StatelessWidget {
     );
   }
 }
-
-/// 模式 → 显示名。
-String modeName(String mode) => switch (mode) {
-      'new_card' => '新词学习',
-      'choice' => '选择题',
-      'dictation' => '听写',
-      'cloze' => '填空',
-      'placement' => '定级测试',
-      _ => mode,
-    };
