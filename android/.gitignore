@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# 本项目为个人应用：keystore 随仓库提交，保证 CI 构建签名稳定（可覆盖安装）。
+!/app/release.keystore

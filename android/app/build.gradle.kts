@@ -31,11 +31,20 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            // 仓库内固定 keystore：CI 每次构建签名一致，APK 可覆盖安装更新。
+            // PKCS12 格式（本机无 JDK，用 Python cryptography 生成），keyPassword 即 storePassword。
+            storeFile = file("release.keystore")
+            storePassword = "memorizeword2026"
+            keyAlias = "memorizeword"
+            keyPassword = "memorizeword2026"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
