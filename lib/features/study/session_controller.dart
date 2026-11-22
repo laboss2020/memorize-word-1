@@ -91,6 +91,7 @@ class StudySessionState {
     this.bumpedMinutes = 0,
     this.backStack = const [],
     this.replaying = false,
+    this.replayReturn,
     this.errorMessage,
   });
 
@@ -113,6 +114,9 @@ class StudySessionState {
 
   /// 正在回看上一个词（重看不重计进度，确认后继续正常推进）。
   final bool replaying;
+
+  /// 回看前的当前题：继续时恢复呈现；恢复题再确认时不再重复结算。
+  final QueueItem? replayReturn;
 
   final String? errorMessage;
 
@@ -139,6 +143,8 @@ class StudySessionState {
     List<QueueItem>? backStack,
     bool clearBackStack = false,
     bool? replaying,
+    QueueItem? replayReturn,
+    bool clearReplayReturn = false,
     String? errorMessage,
   }) {
     return StudySessionState(
@@ -158,6 +164,8 @@ class StudySessionState {
           ? const []
           : (backStack ?? this.backStack),
       replaying: replaying ?? this.replaying,
+      replayReturn:
+          clearReplayReturn ? null : (replayReturn ?? this.replayReturn),
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -299,18 +307,29 @@ class SessionController extends Notifier<StudySessionState> {
     final s = state;
     if (s.phase != SessionPhase.presenting) return;
     if (s.replaying || s.backStack.isEmpty) return;
+    final cur = s.current;
+    if (cur == null || cur.item.mode != StudyMode.newCard) return;
     final s2 = s.copyWith(
       backStack: s.backStack.sublist(0, s.backStack.length - 1),
+      replayReturn: cur.item, // 记住回看前的当前题，继续时恢复
     );
     await _presentItem(s2, s.backStack.last,
         remaining: s.pending, replaying: true);
   }
 
-  /// 回看上一词后点「继续」：恢复正常推进（不出题重计进度）。
+  /// 回看上一词后点「继续」：恢复回看前的当前题（不推进队列、不重计进度）。
   Future<void> continueFromReplay() async {
     final s = state;
     if (!s.replaying || s.phase != SessionPhase.presenting) return;
-    await _advance(s.copyWith(replaying: false));
+    final ret = s.replayReturn;
+    if (ret == null) {
+      await _advance(s.copyWith(replaying: false));
+      return;
+    }
+    // replayReturn 保留在状态中作为「已结算，勿重复计分」标记，
+    // 由 _finalize 消费后清除。
+    await _presentItem(s.copyWith(replaying: false), ret,
+        remaining: s.pending);
   }
 
   /// 听写提交。日语接受假名读音或词头本身（罗马字输入归一为假名比对）。
@@ -609,6 +628,12 @@ class SessionController extends Notifier<StudySessionState> {
     final cur = s.current!;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     _lastWordId = cur.word.id;
+
+    // 「上一个」回看后恢复的题已结算过：不重复写进度/日志/统计，直接推进。
+    if (s.replayReturn != null) {
+      await _advance(s.copyWith(clearReplayReturn: true));
+      return;
+    }
 
     final result = _fsrs.review(
       progress: cur.progress,
