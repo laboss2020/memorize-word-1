@@ -158,6 +158,7 @@ void main() {
 
   test('回看态可连续「上一个」逐个往回翻，「继续」一步回到当前题', () async {
     await start();
+    final w1 = currentWord()!.id;
     await notifier().answerNewCard(); // w1 结算
     final w2 = currentWord()!.id;
     await notifier().answerNewCard(); // w2 结算
