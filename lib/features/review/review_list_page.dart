@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -65,9 +67,13 @@ class ReviewListPage extends ConsumerWidget {
   }
 }
 
-/// 到期单词（due 升序，含进度行；作答后自动重查）。
+/// 到期单词（due 升序，含进度行；作答后自动重查，
+/// 每半分钟重取当前时间让新到期的词自动出现）。
 final dueWordsProvider = StreamProvider.autoDispose
     .family<List<(Word, WordProgressData)>, String>((ref, language) {
+  final timer = Timer.periodic(
+      const Duration(seconds: 30), (_) => ref.invalidateSelf());
+  ref.onDispose(timer.cancel);
   return ref.watch(dbProvider).progressDao.watchDueWords(
       language: language, nowMs: DateTime.now().millisecondsSinceEpoch);
 });

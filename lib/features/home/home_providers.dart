@@ -1,15 +1,21 @@
 /// 主页数据流：到期数、断点会话、建议卡输入（今日统计与连续打卡在 app/providers.dart）。
 library;
 
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/db/app_database.dart';
 import '../../core/utils/study_day.dart';
 
-/// 到期复习数（nowMs 在流创建时冻结；作答后自动重查）。
+/// 到期复习数（作答后自动重查；每半分钟重取当前时间，
+/// 让新词记忆步进到期后计数自动回升，无需离开页面）。
 final dueCountProvider = StreamProvider.autoDispose.family<int, String>(
     (ref, language) {
+  final timer = Timer.periodic(
+      const Duration(seconds: 30), (_) => ref.invalidateSelf());
+  ref.onDispose(timer.cancel);
   return ref.watch(dbProvider).progressDao.watchDueCount(
       language: language, nowMs: DateTime.now().millisecondsSinceEpoch);
 });
