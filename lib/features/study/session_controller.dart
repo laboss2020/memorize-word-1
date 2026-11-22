@@ -239,11 +239,31 @@ class SessionController extends Notifier<StudySessionState> {
         sessionId: sessionId,
         language: language,
         current: current,
+        backStack: await _todayBackStack(
+            language: language, excludeWordId: current.word.id),
         itemShownAtMs: DateTime.now().millisecondsSinceEpoch,
       );
     } catch (e) {
       state = StudySessionState(phase: SessionPhase.error, errorMessage: '$e');
     }
+  }
+
+  /// 今日已完成的新词回看栈（最新在后）：回看栈仅存内存，
+  /// 新会话/续学时从当日学习记录重建，保证跨会话也能「上一个」。
+  Future<List<QueueItem>> _todayBackStack({
+    required String language,
+    String? excludeWordId,
+  }) async {
+    final now = DateTime.now();
+    final todayStartMs =
+        DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+    final doneIds = await _db.studyDao.completedNewWordIds(
+        sinceMs: todayStartMs, language: language);
+    return [
+      for (final id in doneIds.reversed)
+        if (id != excludeWordId)
+          QueueItem(wordId: id, mode: StudyMode.newCard, isNew: false),
+    ];
   }
 
   /// 续学：存在未结束会话时恢复队列。返回是否成功恢复。
@@ -259,17 +279,6 @@ class SessionController extends Notifier<StudySessionState> {
       }
       final current = await _loadItem(pending.first, session.language);
       if (current == null) return false;
-      // 回看栈仅存内存：从今天的新词完成记录重建，保证续学后「上一个」可用。
-      final now = DateTime.now();
-      final todayStartMs =
-          DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
-      final doneIds = await _db.studyDao.completedNewWordIds(
-          sinceMs: todayStartMs, language: session.language);
-      final backStack = [
-        for (final id in doneIds.reversed)
-          if (id != current.word.id)
-            QueueItem(wordId: id, mode: StudyMode.newCard, isNew: false),
-      ];
       state = StudySessionState(
         phase: SessionPhase.presenting,
         pending: pending.sublist(1),
@@ -277,7 +286,8 @@ class SessionController extends Notifier<StudySessionState> {
         sessionId: session.id,
         language: session.language,
         current: current,
-        backStack: backStack,
+        backStack: await _todayBackStack(
+            language: session.language, excludeWordId: current.word.id),
         itemShownAtMs: DateTime.now().millisecondsSinceEpoch,
       );
       return true;

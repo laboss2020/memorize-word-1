@@ -137,6 +137,25 @@ void main() {
     expect(currentWord()!.id, w2);
   });
 
+  test('新会话从今日记录重建回看栈：旧会话结束后重进仍可「上一个」', () async {
+    await start();
+    final w1 = currentWord()!.id;
+    await notifier().answerNewCard(); // w1 结算
+
+    // 模拟退出后重进：startSession 会 abandon 旧断点并重建回看栈。
+    await notifier().startSession(language: 'en');
+    expect(st().phase, SessionPhase.presenting);
+    expect(st().backStack.map((e) => e.wordId), contains(w1));
+
+    await notifier().previousCard(); // 回看旧会话学的 w1
+    expect(st().replaying, isTrue);
+    expect(currentWord()!.id, w1);
+
+    await notifier().continueFromReplay(); // 回到新词继续
+    expect(st().replaying, isFalse);
+    expect(currentWord()!.id, isNot(w1));
+  });
+
   test('选择题：首答对 → Good；再对一次（历史已对）→ Easy', () async {
     await start();
     // 跳过前面的 new_card，把第一个复习前的状态构造出来：
