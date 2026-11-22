@@ -386,6 +386,18 @@ class AppStrings {
         _ => '学习',
       };
 
+  String get uiLang => switch (localeName) {
+        'en' => 'App Language',
+        'ja' => '表示言語',
+        _ => '界面语言',
+      };
+
+  String get uiLangSystem => switch (localeName) {
+        'en' => 'Follow system',
+        'ja' => 'システムに従う',
+        _ => '跟随系统',
+      };
+
   String get learningLang => switch (localeName) {
         'en' => 'Learning Language',
         'ja' => '学習言語',

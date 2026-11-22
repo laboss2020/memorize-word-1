@@ -55,7 +55,8 @@ class StudyLogs extends Table {
 /// 应用设置（单行模式：id='local'）。
 class Settings extends Table {
   TextColumn get id => text().clientDefault(() => 'local')();
-  TextColumn get nativeLang => text().withDefault(const Constant('zh'))(); // 界面语言
+  /// 界面语言：'system'=跟随系统；'zh'/'en'/'ja'=固定语言。
+  TextColumn get nativeLang => text().withDefault(const Constant('system'))();
   TextColumn get learningLang => text().withDefault(const Constant('en'))(); // 当前学习语言
   /// 释义语言模式：'zh'=中文；'alt'=辅助语言（学日语→英文，学英语→日文）；'both'=双语。
   TextColumn get glossMode => text().withDefault(const Constant('zh'))();

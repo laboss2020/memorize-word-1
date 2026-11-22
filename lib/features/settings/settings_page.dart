@@ -36,6 +36,12 @@ class SettingsPage extends ConsumerWidget {
               children: [
                 _section(context, s.sectionStudy),
                 ListTile(
+                  title: Text(s.uiLang),
+                  subtitle: Text(_uiLangName(settings.nativeLang, s)),
+                  trailing: const Icon(Icons.translate),
+                  onTap: () => _pickUiLang(context, ref, settings.nativeLang),
+                ),
+                ListTile(
                   title: Text(s.learningLang),
                   subtitle: Text(s.learningLangSub),
                   trailing: SegmentedButton<String>(
@@ -175,6 +181,47 @@ class SettingsPage extends ConsumerWidget {
   void _update(WidgetRef ref, SettingsCompanion patch) {
     ref.read(dbProvider).settingsDao.updateSettings(patch,
         nowMs: DateTime.now().millisecondsSinceEpoch);
+  }
+
+  /// 界面语言当前值名称（语言名以各自文字显示，不随界面语言翻译）。
+  String _uiLangName(String nativeLang, AppStrings s) {
+    return switch (nativeLang) {
+      'zh' => '中文',
+      'en' => 'English',
+      'ja' => '日本語',
+      _ => s.uiLangSystem,
+    };
+  }
+
+  /// 界面语言选择（底部弹窗）：跟随系统 / 中文 / English / 日本語。
+  void _pickUiLang(BuildContext context, WidgetRef ref, String current) {
+    final s = AppStrings.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        Widget option(String value, String label) => ListTile(
+              title: Text(label),
+              trailing:
+                  value == current ? const Icon(Icons.check) : null,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _update(
+                    ref, SettingsCompanion(nativeLang: Value(value)));
+              },
+            );
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              option('system', s.uiLangSystem),
+              option('zh', '中文'),
+              option('en', 'English'),
+              option('ja', '日本語'),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   /// 释义语言选项随学习语言变化：学日语→中文/英文/双语；学英语→中文/日文/双语。

@@ -133,7 +133,7 @@ class ImportService {
 
   Setting _settingsFromJson(Map<String, dynamic> p) => Setting(
         id: reqString(p, 'id'),
-        nativeLang: optString(p, 'nativeLang') ?? 'zh',
+        nativeLang: optString(p, 'nativeLang') ?? 'system',
         learningLang: optString(p, 'learningLang') ?? 'en',
         glossMode: optString(p, 'glossMode') ?? 'zh',
         dailyNewLimit: optInt(p, 'dailyNewLimit') ?? 10,

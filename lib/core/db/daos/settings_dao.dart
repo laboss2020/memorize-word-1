@@ -16,7 +16,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin 
     if (existing != null) return existing;
     final row = Setting(
       id: 'local',
-      nativeLang: 'zh',
+      nativeLang: 'system',
       learningLang: 'en',
       glossMode: 'zh',
       dailyNewLimit: 10,

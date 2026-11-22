@@ -15,9 +15,15 @@ class ReminderService {
 
   static const dailyNotificationId = 42;
 
-  /// 通知文案按系统语言（无 BuildContext）。
-  static AppStrings get _l => AppStrings(
-      PlatformDispatcher.instance.locale.languageCode);
+  /// 通知文案语言：设置里固定了语言用之，否则按系统语言（无 BuildContext）。
+  static AppStrings stringsFor(String? nativeLang) {
+    final system = PlatformDispatcher.instance.locale.languageCode;
+    final pinned =
+        (nativeLang == 'zh' || nativeLang == 'en' || nativeLang == 'ja')
+            ? nativeLang!
+            : system;
+    return AppStrings(pinned);
+  }
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -105,10 +111,12 @@ class ReminderService {
     final parts = settings.reminderTime.split(':');
     final hour = int.tryParse(parts[0]) ?? 20;
     final minute = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
-    await scheduleDaily(hour: hour, minute: minute);
+    await scheduleDaily(hour: hour, minute: minute,
+        l: stringsFor(settings.nativeLang));
   }
 
-  Future<void> scheduleDaily({required int hour, required int minute}) async {
+  Future<void> scheduleDaily(
+      {required int hour, required int minute, AppStrings? l}) async {
     try {
       await _ensureInitialized();
       var mode = AndroidScheduleMode.exactAllowWhileIdle;
@@ -120,17 +128,17 @@ class ReminderService {
           mode = AndroidScheduleMode.inexactAllowWhileIdle;
         }
       }
-      final l = _l;
+      final lang = l ?? stringsFor(null);
       await _plugin.zonedSchedule(
         id: dailyNotificationId,
-        title: l.appName,
-        body: l.reminderBody,
+        title: lang.appName,
+        body: lang.reminderBody,
         scheduledDate: _nextOccurrence(hour, minute),
         notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             'daily_reminder',
-            l.reminderChannelName,
-            channelDescription: l.reminderChannelDesc,
+            lang.reminderChannelName,
+            channelDescription: lang.reminderChannelDesc,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
           ),

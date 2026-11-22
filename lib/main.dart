@@ -27,7 +27,13 @@ class MemorizeWordApp extends ConsumerWidget {
       if (s != null) reminder.syncFromSettings(s);
     });
 
+    // 界面语言：设置里固定了语言则覆盖系统语言。
+    final native = settings.value?.nativeLang;
+    final pinned =
+        (native == 'zh' || native == 'en' || native == 'ja') ? native : null;
+
     return MaterialApp.router(
+      locale: pinned == null ? null : Locale(pinned),
       onGenerateTitle: (context) => AppStrings.of(context).appName,
       theme: AppTheme.light(),
       localizationsDelegates: const [

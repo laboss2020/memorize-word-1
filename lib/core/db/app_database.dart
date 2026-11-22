@@ -37,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
       ));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -45,6 +45,10 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.addColumn(settings, settings.glossMode);
+          }
+          if (from < 3) {
+            // nativeLang 历史默认 'zh'（从未暴露给用户），统一改为跟随系统。
+            await customStatement("UPDATE settings SET native_lang = 'system'");
           }
           // 后续版本在此添加 stepByStep 迁移。
         },

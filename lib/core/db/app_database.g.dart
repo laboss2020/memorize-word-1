@@ -2859,7 +2859,7 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('zh'),
+    defaultValue: const Constant('system'),
   );
   static const VerificationMeta _learningLangMeta = const VerificationMeta(
     'learningLang',
