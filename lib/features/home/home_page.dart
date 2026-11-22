@@ -27,6 +27,8 @@ class HomePage extends ConsumerWidget {
     final newLimit = settings?.dailyNewLimit ?? 10;
     final newDone = todayStats?.newCount ?? 0;
     final newLeft = (newLimit - newDone).clamp(0, newLimit);
+    // 当天完成数（与学习页进度条同源；会话计数可能跨天，不作展示）。
+    final todayDone = newDone + (todayStats?.reviewCount ?? 0);
 
     final suggestions = SuggestionEngine.build(
       SuggestionInputs(
@@ -94,7 +96,7 @@ class HomePage extends ConsumerWidget {
                             onPressed: () => context.push('/study'),
                             icon: const Icon(Icons.play_circle_outline),
                             label:
-                                Text(t.continueStudy(openSession.completedCount)),
+                                Text(t.continueStudy(todayDone)),
                           )
                         : (dueCount > 0 || newLeft > 0)
                             ? FilledButton.icon(
