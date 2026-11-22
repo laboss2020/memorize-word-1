@@ -111,8 +111,7 @@ void main() {
 
   test('回看后恢复的当前题确认时正常结算（不漏计进度）', () async {
     await start();
-    final w1 = currentWord()!.id;
-    await notifier().answerNewCard(); // w1 结算 → 第二词
+    await notifier().answerNewCard(); // 第一词结算 → 第二词
     final w2 = currentWord()!.id;
 
     await notifier().previousCard(); // 回看 w1
