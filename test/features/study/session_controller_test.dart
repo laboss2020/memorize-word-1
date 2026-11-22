@@ -156,6 +156,28 @@ void main() {
     expect(currentWord()!.id, isNot(w1));
   });
 
+  test('回看态可连续「上一个」逐个往回翻，「继续」一步回到当前题', () async {
+    await start();
+    await notifier().answerNewCard(); // w1 结算
+    final w2 = currentWord()!.id;
+    await notifier().answerNewCard(); // w2 结算
+    final w3 = currentWord()!.id;
+
+    await notifier().previousCard(); // 回看 w2
+    expect(currentWord()!.id, w2);
+    await notifier().previousCard(); // 回看态再上一个 → w1
+    expect(st().replaying, isTrue);
+    expect(currentWord()!.id, w1);
+
+    await notifier().continueFromReplay(); // 一步回到 w3
+    expect(st().replaying, isFalse);
+    expect(currentWord()!.id, w3);
+    expect(st().completedCount, 2); // 回看不重计
+
+    await notifier().answerNewCard(); // w3 确认正常结算
+    expect(st().completedCount, 3);
+  });
+
   test('选择题：首答对 → Good；再对一次（历史已对）→ Easy', () async {
     await start();
     // 跳过前面的 new_card，把第一个复习前的状态构造出来：

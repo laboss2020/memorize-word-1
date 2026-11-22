@@ -360,16 +360,20 @@ class SessionController extends Notifier<StudySessionState> {
   }
 
   /// 新卡学习：返回上一个已确认的词重新查看（不重计进度）。
+  /// 回看态可继续往回翻（返回点保持原当前题，「继续」一步回到当前题）。
   Future<void> previousCard() async {
     final s = state;
     if (s.phase != SessionPhase.presenting) return;
-    if (s.replaying || s.backStack.isEmpty) return;
+    if (s.backStack.isEmpty) return;
     final cur = s.current;
     if (cur == null || cur.item.mode != StudyMode.newCard) return;
-    final s2 = s.copyWith(
-      backStack: s.backStack.sublist(0, s.backStack.length - 1),
-      replayReturn: cur.item, // 记住回看前的当前题，继续时恢复
-    );
+    final s2 = s.replaying
+        ? s.copyWith(
+            backStack: s.backStack.sublist(0, s.backStack.length - 1))
+        : s.copyWith(
+            backStack: s.backStack.sublist(0, s.backStack.length - 1),
+            replayReturn: cur.item, // 记住回看前的当前题，继续时恢复
+          );
     await _presentItem(s2, s.backStack.last,
         remaining: s.pending, replaying: true);
   }
