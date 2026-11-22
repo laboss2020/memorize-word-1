@@ -16,6 +16,7 @@ import 'package:memorize_word/core/db/app_database.dart';
 ///   settingsProvider，测试里同样挂一个常驻监听，模拟根组件。
 void main() {
   late AppDatabase db;
+  ProviderContainer? appContainer;
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -24,6 +25,18 @@ void main() {
   tearDown(() async {
     await db.close();
   });
+
+  /// 卸载应用并释放容器（幂等）。
+  ///
+  /// 必须在测试体返回前调用：flutter_test 在 addTearDown 之前校验
+  /// pending timers，主页到期数自动刷新的定时器须先取消。
+  Future<void> unmountApp(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 10));
+    appContainer?.dispose();
+    appContainer = null;
+    await tester.pump(const Duration(milliseconds: 10));
+  }
 
   /// 每档 4 个词（freq 递增保证出题顺序确定），释义可区分。
   Future<void> seedLevels(List<String> levels) async {
@@ -60,13 +73,8 @@ void main() {
   Future<ProviderContainer> pumpApp(WidgetTester tester) async {
     final container = ProviderContainer(
         overrides: [dbProvider.overrideWithValue(db)]);
-    addTearDown(() async {
-      // 失败也要卸载，避免把容器/流监听泄漏给后续测试。
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump(const Duration(milliseconds: 10));
-      container.dispose();
-      await tester.pump(const Duration(milliseconds: 10));
-    });
+    appContainer = container;
+    addTearDown(() => unmountApp(tester)); // 失败也要卸载，避免把容器/流监听泄漏给后续测试。
     container.listen(settingsProvider, (_, _) {}); // 模拟根组件常驻监听
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
@@ -144,6 +152,7 @@ void main() {
     expect(stats, isEmpty);
     final progress = await db.select(db.wordProgress).get();
     expect(progress, isEmpty);
+    await unmountApp(tester);
   });
 
   testWidgets('跳过定级 → 默认目标 → 主页，placementDone=false', (tester) async {
@@ -168,6 +177,7 @@ void main() {
 
     final logs = await db.select(db.studyLogs).get();
     expect(logs, isEmpty);
+    await unmountApp(tester);
   });
 
   testWidgets('重新定级：已引导用户可进 /placement，完成后只写定级字段', (tester) async {
@@ -208,6 +218,7 @@ void main() {
     expect(s.placementDone, isTrue);
     expect(s.placementLevelEn, 'A2');
     expect(s.dailyNewLimit, 25); // 重新定级不动每日目标
+    await unmountApp(tester);
   });
 
   testWidgets('连错两题定级结束：保守取低一档（B1 → A2）', (tester) async {
@@ -245,5 +256,6 @@ void main() {
     final s = await settings();
     expect(s.placementDone, isTrue);
     expect(s.placementLevelEn, 'A2');
+    await unmountApp(tester);
   });
 }
