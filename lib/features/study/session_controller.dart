@@ -115,7 +115,7 @@ class StudySessionState {
   /// 正在回看上一个词（重看不重计进度，确认后继续正常推进）。
   final bool replaying;
 
-  /// 回看前的当前题：继续时恢复呈现；恢复题再确认时不再重复结算。
+  /// 回看前的当前题（呈现中、未结算）：继续时恢复呈现。
   final QueueItem? replayReturn;
 
   final String? errorMessage;
@@ -373,9 +373,9 @@ class SessionController extends Notifier<StudySessionState> {
       await _advance(s.copyWith(replaying: false));
       return;
     }
-    // replayReturn 保留在状态中作为「已结算，勿重复计分」标记，
-    // 由 _finalize 消费后清除。
-    await _presentItem(s.copyWith(replaying: false), ret,
+    // 恢复题在呈现阶段从未结算过，清掉回看标记：确认后正常计分。
+    await _presentItem(
+        s.copyWith(replaying: false, clearReplayReturn: true), ret,
         remaining: s.pending);
   }
 
@@ -675,12 +675,6 @@ class SessionController extends Notifier<StudySessionState> {
     final cur = s.current!;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     _lastWordId = cur.word.id;
-
-    // 「上一个」回看后恢复的题已结算过：不重复写进度/日志/统计，直接推进。
-    if (s.replayReturn != null) {
-      await _advance(s.copyWith(clearReplayReturn: true));
-      return;
-    }
 
     final result = _fsrs.review(
       progress: cur.progress,

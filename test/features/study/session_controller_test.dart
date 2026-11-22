@@ -109,6 +109,35 @@ void main() {
     expect(currentWord()!.id, w2);
   });
 
+  test('回看后恢复的当前题确认时正常结算（不漏计进度）', () async {
+    await start();
+    final w1 = currentWord()!.id;
+    await notifier().answerNewCard(); // w1 结算 → 第二词
+    final w2 = currentWord()!.id;
+
+    await notifier().previousCard(); // 回看 w1
+    expect(st().replaying, isTrue);
+    await notifier().continueFromReplay(); // 恢复 w2（未结算）
+    expect(st().replaying, isFalse);
+    expect(currentWord()!.id, w2);
+
+    await notifier().answerNewCard(); // w2 确认 → 必须正常计分
+    expect(st().completedCount, 2);
+    expect(currentWord()!.id, isNot(w2)); // 已推进到第三词
+
+    final today = _today();
+    final stats = await (db.select(db.dailyStats)
+          ..where((s) => s.date.equals(today)))
+        .getSingleOrNull();
+    expect(stats!.newCount, 2);
+    expect(stats.totalCount, 2);
+
+    // 回看栈含刚确认的 w2，可继续回看。
+    await notifier().previousCard();
+    expect(st().replaying, isTrue);
+    expect(currentWord()!.id, w2);
+  });
+
   test('选择题：首答对 → Good；再对一次（历史已对）→ Easy', () async {
     await start();
     // 跳过前面的 new_card，把第一个复习前的状态构造出来：
