@@ -141,7 +141,7 @@ class AppStrings {
 
   String streakDays(int n) => switch (localeName) {
         'en' => '$n days',
-        'ja' => '${n}日',
+        'ja' => '$n日',
         _ => '$n 天',
       };
 
@@ -205,7 +205,7 @@ class AppStrings {
         'en' =>
           "You've been away $absent days. Try lowering your review limit to "
               '$half to ease back in.',
-        'ja' => '${absent}日ぶりです。復習上限を$halfに下げて、無理なく再開しましょう。',
+        'ja' => '$absent日ぶりです。復習上限を$halfに下げて、無理なく再開しましょう。',
         _ => '休息了 $absent 天，建议把复习上限降到 $half，轻松找回节奏。',
       };
 
@@ -225,7 +225,7 @@ class AppStrings {
         'en' =>
           '$due words are due for review. Clear reviews before learning new '
               'words for better efficiency.',
-        'ja' => '${due}個の単語が復習待ちです。先に復習を片付けると効率的です。',
+        'ja' => '$due個の単語が復習待ちです。先に復習を片付けると効率的です。',
         _ => '有 $due 个单词等着复习，先清复习再学新词效率更高。',
       };
 
@@ -240,7 +240,7 @@ class AppStrings {
         'en' =>
           '$streak-day streak with $accuracy% accuracy. '
               'Time to increase your load.',
-        'ja' => '${streak}日連続で学習し、正答率${accuracy}%。少し負荷を上げてもよいでしょう。',
+        'ja' => '$streak日連続で学習し、正答率$accuracy%。少し負荷を上げてもよいでしょう。',
         _ => '连续 $streak 天打卡，正确率 $accuracy%，可以适当加量。',
       };
 
@@ -368,7 +368,7 @@ class AppStrings {
 
   String completedN(int n) => switch (localeName) {
         'en' => 'Completed $n items',
-        'ja' => '${n}項目を完了',
+        'ja' => '$n項目を完了',
         _ => '完成 $n 项',
       };
 
@@ -566,19 +566,19 @@ class AppStrings {
       if (unknown > 0)
         switch (localeName) {
           'en' => 'skipped $unknown unknown-word records',
-          'ja' => '未知の単語の記録${unknown}件をスキップ',
+          'ja' => '未知の単語の記録$unknown件をスキップ',
           _ => '跳过未知词记录 $unknown 条',
         },
       if (stale > 0)
         switch (localeName) {
           'en' => 'kept $stale newer local records',
-          'ja' => 'ローカルの新しいデータ${stale}件を維持',
+          'ja' => 'ローカルの新しいデータ$stale件を維持',
           _ => '保留本地较新数据 $stale 条',
         },
     ];
     final head = switch (localeName) {
       'en' => 'Imported $applied records',
-      'ja' => '${applied}件をインポートしました',
+      'ja' => '$applied件をインポートしました',
       _ => '已导入 $applied 条',
     };
     final sep = switch (localeName) {
@@ -819,7 +819,7 @@ class AppStrings {
 
   String heatmapTooltip(int month, int day, int count) => switch (localeName) {
         'en' => '$month/$day: $count items',
-        'ja' => '$month/$day：${count}件',
+        'ja' => '$month/$day：$count件',
         _ => '$month/$day：$count 项',
       };
 

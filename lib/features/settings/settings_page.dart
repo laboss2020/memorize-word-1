@@ -211,7 +211,8 @@ class SettingsPage extends ConsumerWidget {
           mimeType: 'application/json',
         );
         messenger.showSnackBar(SnackBar(
-          content: Text(saved == null ? s.cancelled : s.savedTo(saved)),
+          content: Text(
+              saved == null ? s.cancelled : s.savedTo(saved.toFilePath())),
         ));
       }
     } catch (e) {

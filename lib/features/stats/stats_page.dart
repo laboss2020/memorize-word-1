@@ -375,8 +375,8 @@ class _HeatmapCard extends StatelessWidget {
                       for (var row = 0; row < 7; row++)
                         Padding(
                           padding: EdgeInsets.only(bottom: row == 6 ? 0 : _gap),
-                          child: _cellOrSpacer(start, col, row, today, byDate,
-                              cellColor, scheme),
+                          child: _cellOrSpacer(context, start, col, row,
+                              today, byDate, cellColor, scheme),
                         ),
                     ],
                   ),
@@ -389,6 +389,7 @@ class _HeatmapCard extends StatelessWidget {
   }
 
   Widget _cellOrSpacer(
+      BuildContext context,
       DateTime start,
       int col,
       int row,
