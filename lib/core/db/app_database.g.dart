@@ -3271,6 +3271,8 @@ class $SettingsTable extends Settings with TableInfo<$SettingsTable, Setting> {
 
 class Setting extends DataClass implements Insertable<Setting> {
   final String id;
+
+  /// 界面语言：'system'=跟随系统；'zh'/'en'/'ja'=固定语言。
   final String nativeLang;
   final String learningLang;
 
