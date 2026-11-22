@@ -22,6 +22,26 @@ class ProgressDao extends DatabaseAccessor<AppDatabase> with _$ProgressDaoMixin 
         .watchSingleOrNull();
   }
 
+  /// 到期单词（含词信息，due 升序；待复习一览页）。
+  Stream<List<(Word, WordProgressData)>> watchDueWords({
+    required String language,
+    required int nowMs,
+  }) {
+    final words = attachedDatabase.words;
+    final query = select(wordProgress).join([
+      innerJoin(words, words.id.equalsExp(wordProgress.wordId)),
+    ])
+      ..where(wordProgress.language.equals(language) &
+          wordProgress.due.isSmallerOrEqualValue(nowMs) &
+          wordProgress.deletedAt.isNull())
+      ..orderBy([OrderingTerm.asc(wordProgress.due)])
+      ..limit(200);
+    return query.watch().map((rows) => [
+          for (final row in rows)
+            (row.readTable(words), row.readTable(wordProgress)),
+        ]);
+  }
+
   Future<void> upsertProgress(WordProgressData row) {
     return into(wordProgress).insertOnConflictUpdate(row);
   }

@@ -110,6 +110,25 @@ class StudyDao extends DatabaseAccessor<AppDatabase> with _$StudyDaoMixin {
     ).map((row) => row.read<String>('date')).get();
   }
 
+  /// [sinceMs] 之后完成过的新词 id（按最后完成时间倒序去重）。
+  /// 续学时重建「上一个」回看栈用（回看栈仅存内存，断点不含）。
+  Future<List<String>> completedNewWordIds({
+    required int sinceMs,
+    required String language,
+    int limit = 10,
+  }) {
+    final words = attachedDatabase.words;
+    return customSelect(
+      'SELECT sl.word_id AS wid, MAX(sl.studied_at) AS last_at '
+      'FROM study_logs sl JOIN ${words.aliasedName} w ON w.id = sl.word_id '
+      "WHERE sl.mode = 'new_card' AND sl.deleted_at IS NULL "
+      'AND sl.studied_at >= ? AND w.language = ? '
+      'GROUP BY sl.word_id ORDER BY last_at DESC LIMIT ?',
+      variables: [Variable(sinceMs), Variable(language), Variable(limit)],
+      readsFrom: {studyLogs, words},
+    ).map((row) => row.read<String>('wid')).get();
+  }
+
   // ---- 会话断点 ----
 
   /// 打开新会话前清理历史遗留的未结束会话。

@@ -75,7 +75,10 @@ class HomePage extends ConsumerWidget {
                       _StatChip(
                           label: t.toReview,
                           value: '$dueCount',
-                          color: scheme.tertiary),
+                          color: scheme.tertiary,
+                          onTap: dueCount > 0
+                              ? () => context.push('/review')
+                              : null),
                       const SizedBox(width: 8),
                       _StatChip(
                           label: t.newWords,
@@ -206,31 +209,37 @@ class _SuggestionCard extends ConsumerWidget {
 
 class _StatChip extends StatelessWidget {
   const _StatChip(
-      {required this.label, required this.value, required this.color});
+      {required this.label, required this.value, required this.color,
+      this.onTap});
 
   final String label;
   final String value;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
+      child: Material(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(value,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.bold, color: color)),
-            const SizedBox(height: 2),
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              children: [
+                Text(value,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold, color: color)),
+                const SizedBox(height: 2),
+                Text(label, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
         ),
       ),
     );

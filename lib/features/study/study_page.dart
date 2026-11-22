@@ -8,6 +8,7 @@ import '../../core/db/app_database.dart' show Word;
 import '../../core/fsrs/rating_mapper.dart' show StudyMode;
 import '../../core/tts/tts_service.dart';
 import '../../core/utils/word_content.dart';
+import '../home/home_providers.dart' show dueCountProvider;
 import 'session_controller.dart';
 
 /// 全屏学习会话：进度条 + 模式分发 + 即时反馈；退出 = 存断点。
@@ -105,16 +106,30 @@ class _StudyPageState extends ConsumerState<StudyPage> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: LinearProgressIndicator(value: state.progress),
-                      ),
-                      const SizedBox(width: 12),
-                      Text('${state.completedCount}/${state.totalCount}',
-                          style: Theme.of(context).textTheme.bodySmall),
-                    ],
-                  ),
+                  child: Builder(builder: (context) {
+                    // 进度条按当天任务计（今日已完成 / 今日已完成+剩余新词+当前到期），
+                    // 与主页「今日任务」一致；会话计数在续学时只含断点内进度。
+                    final today = ref.watch(todayStatsProvider).value;
+                    final dueNow =
+                        ref.watch(dueCountProvider(state.language)).value ?? 0;
+                    final newDone = today?.newCount ?? 0;
+                    final reviewDone = today?.reviewCount ?? 0;
+                    final newLeft = ((settings?.dailyNewLimit ?? 10) - newDone)
+                        .clamp(0, 999);
+                    final done = newDone + reviewDone;
+                    final total = done + newLeft + dueNow;
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: LinearProgressIndicator(
+                              value: total == 0 ? 0 : done / total),
+                        ),
+                        const SizedBox(width: 12),
+                        Text('$done/$total',
+                            style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    );
+                  }),
                 ),
                 Expanded(
                   child: switch (state.current?.item.mode) {

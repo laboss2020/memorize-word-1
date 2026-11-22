@@ -259,6 +259,17 @@ class SessionController extends Notifier<StudySessionState> {
       }
       final current = await _loadItem(pending.first, session.language);
       if (current == null) return false;
+      // 回看栈仅存内存：从今天的新词完成记录重建，保证续学后「上一个」可用。
+      final now = DateTime.now();
+      final todayStartMs =
+          DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+      final doneIds = await _db.studyDao.completedNewWordIds(
+          sinceMs: todayStartMs, language: session.language);
+      final backStack = [
+        for (final id in doneIds.reversed)
+          if (id != current.word.id)
+            QueueItem(wordId: id, mode: StudyMode.newCard, isNew: false),
+      ];
       state = StudySessionState(
         phase: SessionPhase.presenting,
         pending: pending.sublist(1),
@@ -266,6 +277,7 @@ class SessionController extends Notifier<StudySessionState> {
         sessionId: session.id,
         language: session.language,
         current: current,
+        backStack: backStack,
         itemShownAtMs: DateTime.now().millisecondsSinceEpoch,
       );
       return true;
@@ -274,22 +286,57 @@ class SessionController extends Notifier<StudySessionState> {
     }
   }
 
+  /// 单词定向复习（待复习一览点击单个词）：不建断点会话，
+  /// 队列耗尽时由 _advance 自动接续其余到期卡。
+  Future<void> startSingleReview({
+    required String wordId,
+    required String language,
+  }) async {
+    try {
+      state = StudySessionState(
+          phase: SessionPhase.loading, language: language);
+      final current = await _loadItem(
+        QueueItem(wordId: wordId, mode: StudyMode.choice, isNew: false),
+        language,
+      );
+      if (current == null) throw StateError('词不存在: $wordId');
+      state = StudySessionState(
+        phase: SessionPhase.presenting,
+        language: language,
+        current: current,
+        itemShownAtMs: DateTime.now().millisecondsSinceEpoch,
+      );
+    } catch (e) {
+      state = StudySessionState(phase: SessionPhase.error, errorMessage: '$e');
+    }
+  }
+
   /// 退出（存断点，不结束会话）：当前未答完的题放回队首；补记时长。
   Future<void> pauseAndExit() async {
     final s = state;
     if (s.sessionId == null) return;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    // 回看中的词已完成过，断点只存未开始与当前正常题，避免续学后重复计分。
-    final remaining = [
-      if (s.current != null && !s.replaying) s.current!.item,
-      ...s.pending,
-    ];
-    await _db.studyDao.updateSession(
-      id: s.sessionId!,
-      queue: encodeQueue(remaining),
-      completedCount: s.completedCount,
-      nowMs: nowMs,
-    );
+    if (s.sessionId != null) {
+      // 回看中的词已完成过，断点只存未开始与当前正常题，避免续学后重复计分。
+      final remaining = [
+        if (s.current != null && !s.replaying) s.current!.item,
+        ...s.pending,
+      ];
+      await _db.studyDao.updateSession(
+        id: s.sessionId!,
+        queue: encodeQueue(remaining),
+        completedCount: s.completedCount,
+        nowMs: nowMs,
+      );
+    } else {
+      // 无断点会话（单词定向复习）：退出即结束内存态，
+      // 下次进入按断点/新会话恢复。
+      state = s.copyWith(
+          phase: SessionPhase.finished,
+          clearFeedback: true,
+          clearCurrent: true);
+    }
+    // 无断点会话也补记学习时长。
     await _flushMinutes(s, nowMs);
   }
 
