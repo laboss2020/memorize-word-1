@@ -338,7 +338,7 @@ class SessionController extends Notifier<StudySessionState> {
       // 重复计分或丢失该题。
       final head = s.replaying ? s.replayReturn : s.current?.item;
       final remaining = [
-        if (head != null) head,
+        ?head,
         ...s.pending,
       ];
       await _db.studyDao.updateSession(
