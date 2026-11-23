@@ -105,8 +105,9 @@ void main() {
     expect(currentWord()!.id, w2);
     expect(st().completedCount, 1); // 未重复计分
 
-    await notifier().previousCard(); // 回看栈已空
-    expect(currentWord()!.id, w2);
+    await notifier().previousCard(); // 不弹栈：可再次回看最近的已确认词
+    expect(st().replaying, isTrue);
+    expect(currentWord()!.id, w1);
   });
 
   test('回看后恢复的当前题确认时正常结算（不漏计进度）', () async {
@@ -307,6 +308,31 @@ void main() {
     expect(st().phase, SessionPhase.presenting);
     expect(st().completedCount, 1);
     expect(st().current, isNotNull);
+  });
+
+  test('回看中暂停退出：断点保存回看前的当前题，续学不丢不重计', () async {
+    await start();
+    await notifier().answerNewCard(); // w1 结算
+    final w2 = currentWord()!.id;
+
+    await notifier().previousCard(); // 回看 w1（当前题 w2 呈现中、未结算）
+    expect(st().replaying, isTrue);
+
+    await notifier().pauseAndExit();
+    final session = await db.studyDao.openSession();
+    expect(session, isNotNull);
+    // 断点队首是回看前的当前题 w2（未结算），而不是回看中的 w1。
+    final queue = decodeQueue(session!.queue!);
+    expect(queue.first.wordId, w2);
+
+    // 模拟重启：续学恢复 w2，回看态复位。
+    container.dispose();
+    container = ProviderContainer(overrides: [dbProvider.overrideWithValue(db)]);
+    final resumed = await notifier().tryResume();
+    expect(resumed, isTrue);
+    expect(currentWord()!.id, w2);
+    expect(st().replaying, isFalse);
+    expect(st().completedCount, 1);
   });
 
   test('已学完的词不再作为新词出现（anti-join）', () async {

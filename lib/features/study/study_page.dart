@@ -138,7 +138,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                         glossMode: glossMode,
                         learningLang: state.language,
                         replaying: state.replaying,
-                        canGoBack: state.backStack.isNotEmpty,
+                        canGoBack: state.backStack.isNotEmpty &&
+                            (!state.replaying || state.replayIndex > 0),
                         onConfirm: state.replaying
                             ? notifier.continueFromReplay
                             : notifier.answerNewCard,

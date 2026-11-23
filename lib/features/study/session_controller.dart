@@ -92,6 +92,7 @@ class StudySessionState {
     this.backStack = const [],
     this.replaying = false,
     this.replayReturn,
+    this.replayIndex = -1,
     this.errorMessage,
   });
 
@@ -117,6 +118,10 @@ class StudySessionState {
 
   /// 回看前的当前题（呈现中、未结算）：继续时恢复呈现。
   final QueueItem? replayReturn;
+
+  /// 正在回看的词在 backStack 中的下标（-1 = 非回看态）。
+  /// 回看不弹出栈：可反复回看、继续后归位到最新。
+  final int replayIndex;
 
   final String? errorMessage;
 
@@ -145,6 +150,7 @@ class StudySessionState {
     bool? replaying,
     QueueItem? replayReturn,
     bool clearReplayReturn = false,
+    int? replayIndex,
     String? errorMessage,
   }) {
     return StudySessionState(
@@ -166,6 +172,7 @@ class StudySessionState {
       replaying: replaying ?? this.replaying,
       replayReturn:
           clearReplayReturn ? null : (replayReturn ?? this.replayReturn),
+      replayIndex: replayIndex ?? this.replayIndex,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -327,9 +334,11 @@ class SessionController extends Notifier<StudySessionState> {
     if (s.sessionId == null) return;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     if (s.sessionId != null) {
-      // 回看中的词已完成过，断点只存未开始与当前正常题，避免续学后重复计分。
+      // 回看中的词已完成过：断点存回看前的当前题（未结算），避免续学后
+      // 重复计分或丢失该题。
+      final head = s.replaying ? s.replayReturn : s.current?.item;
       final remaining = [
-        if (s.current != null && !s.replaying) s.current!.item,
+        if (head != null) head,
         ...s.pending,
       ];
       await _db.studyDao.updateSession(
@@ -359,22 +368,24 @@ class SessionController extends Notifier<StudySessionState> {
     await _finalize(rating: rateNewCard().value, correct: true, showFeedback: false);
   }
 
-  /// 新卡学习：返回上一个已确认的词重新查看（不重计进度）。
-  /// 回看态可继续往回翻（返回点保持原当前题，「继续」一步回到当前题）。
+  /// 新卡学习：返回已确认的词重新查看（不重计进度、不弹出栈）。
+  /// 首次从最近一个已确认词开始；回看态可继续往回翻；
+  /// 「继续」一步回到当前题，之后再点「上一个」又从最近开始。
   Future<void> previousCard() async {
     final s = state;
     if (s.phase != SessionPhase.presenting) return;
     if (s.backStack.isEmpty) return;
     final cur = s.current;
     if (cur == null || cur.item.mode != StudyMode.newCard) return;
+    final idx = s.replaying ? s.replayIndex - 1 : s.backStack.length - 1;
+    if (idx < 0) return; // 已翻到最早一个
     final s2 = s.replaying
-        ? s.copyWith(
-            backStack: s.backStack.sublist(0, s.backStack.length - 1))
+        ? s.copyWith(replayIndex: idx)
         : s.copyWith(
-            backStack: s.backStack.sublist(0, s.backStack.length - 1),
             replayReturn: cur.item, // 记住回看前的当前题，继续时恢复
+            replayIndex: idx,
           );
-    await _presentItem(s2, s.backStack.last,
+    await _presentItem(s2, s.backStack[idx],
         remaining: s.pending, replaying: true);
   }
 
@@ -384,12 +395,15 @@ class SessionController extends Notifier<StudySessionState> {
     if (!s.replaying || s.phase != SessionPhase.presenting) return;
     final ret = s.replayReturn;
     if (ret == null) {
-      await _advance(s.copyWith(replaying: false));
+      await _advance(
+          s.copyWith(replaying: false, replayIndex: -1));
       return;
     }
     // 恢复题在呈现阶段从未结算过，清掉回看标记：确认后正常计分。
     await _presentItem(
-        s.copyWith(replaying: false, clearReplayReturn: true), ret,
+        s.copyWith(
+            replaying: false, clearReplayReturn: true, replayIndex: -1),
+        ret,
         remaining: s.pending);
   }
 
