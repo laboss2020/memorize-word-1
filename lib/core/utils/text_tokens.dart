@@ -29,6 +29,9 @@ List<String> inflectionCandidates(String word) {
   if (w.endsWith('ies') && w.length > 4) {
     add('${w.substring(0, w.length - 3)}y');
   }
+  if (w.endsWith('ied') && w.length > 4) {
+    add('${w.substring(0, w.length - 3)}y'); // cried→cry
+  }
   if (w.endsWith('es') && w.length > 3) {
     add(w.substring(0, w.length - 2));
     add(w.substring(0, w.length - 1)); // 去 s（如 goes→go）
