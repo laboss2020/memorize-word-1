@@ -9,6 +9,7 @@ import '../../core/fsrs/rating_mapper.dart' show StudyMode;
 import '../../core/tts/tts_service.dart';
 import '../../core/utils/word_content.dart';
 import '../home/home_providers.dart' show dueCountProvider;
+import '../word_detail/tappable_example_text.dart';
 import 'session_controller.dart';
 
 /// 全屏学习会话：进度条 + 模式分发 + 即时反馈；退出 = 存断点。
@@ -145,7 +146,12 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                             : notifier.answerNewCard,
                         onPrevious: notifier.previousCard,
                         onSpeak: () => _speakNow(
-                            state.current!.word.headword, state.language)),
+                            state.current!.word.headword, state.language),
+                        onSpeakExample: (text) =>
+                            _speakNow(text, state.language),
+                        knownHeads: ref
+                            .watch(knownHeadProvider(state.language))
+                            .value),
                     StudyMode.choice => _ChoiceView(
                         item: state.current!,
                         feedback: state.feedback,
@@ -197,22 +203,28 @@ class _NewCardView extends StatelessWidget {
     required this.onConfirm,
     required this.onPrevious,
     required this.onSpeak,
+    required this.onSpeakExample,
     required this.glossMode,
     required this.learningLang,
     required this.replaying,
     required this.canGoBack,
+    required this.knownHeads,
   });
 
   final SessionItemState item;
   final VoidCallback onConfirm;
   final VoidCallback onPrevious;
   final VoidCallback onSpeak;
+  final void Function(String text) onSpeakExample;
   final String glossMode;
   final String learningLang;
 
   /// 正在回看上一个词（确认按钮为「继续」，不再计分）。
   final bool replaying;
   final bool canGoBack;
+
+  /// 词库词形集合（例句点词查字典）；未加载完为 null，降级纯文本。
+  final Set<String>? knownHeads;
 
   @override
   Widget build(BuildContext context) {
@@ -250,6 +262,13 @@ class _NewCardView extends StatelessWidget {
             Text(word.reading ?? '/${word.phonetic}/',
                 style: Theme.of(context).textTheme.bodyLarge),
           ],
+          if (word.pos != null)
+            Text(word.pos!,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(
+                        color: Theme.of(context).colorScheme.outline)),
           const SizedBox(height: 16),
           for (final m in meanings)
             Padding(
@@ -261,11 +280,28 @@ class _NewCardView extends StatelessWidget {
           for (final e in examples) ...[
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(12, 4, 4, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(e.text),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TappableExampleText(
+                            text: e.text,
+                            language: learningLang,
+                            glossMode: glossMode,
+                            knownHeads: knownHeads,
+                          ),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.volume_up_outlined, size: 20),
+                          onPressed: () => onSpeakExample(e.text),
+                        ),
+                      ],
+                    ),
                     for (final tr in translationsForAll(e,
                         glossMode: glossMode,
                         learningLang: learningLang)) ...[
@@ -352,6 +388,13 @@ class _ChoiceView extends StatelessWidget {
             Text(word.reading ?? '/${word.phonetic}/',
                 style: Theme.of(context).textTheme.bodyLarge),
           ],
+          if (word.pos != null)
+            Text(word.pos!,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(
+                        color: Theme.of(context).colorScheme.outline)),
           const SizedBox(height: 24),
           for (final option in item.choiceOptions)
             Padding(

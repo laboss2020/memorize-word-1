@@ -65,3 +65,24 @@ final streakProvider = StreamProvider.autoDispose<int>((ref) {
       .watchRecentDays(fromDate)
       .map((days) => computeStreak({for (final d in days) d.date}));
 });
+
+/// 词库词形集合（点词查字典的分词用，按语言缓存）。
+final knownHeadProvider = FutureProvider.autoDispose.family<Set<String>, String>(
+    (ref, language) {
+  return ref.watch(dbProvider).wordDao.headwordForms(language);
+});
+
+/// 已学单词列表（有进度的词，最近学习倒序）。
+/// [filter] null=全部；学习中/巩固中/已掌握口径见 ProgressDao.watchLearnedWords。
+final learnedWordsProvider = StreamProvider.autoDispose
+    .family<List<(Word, WordProgressData)>, (String, int?)>((ref, params) {
+  final (language, filter) = params;
+  return ref.watch(dbProvider).progressDao.watchLearnedWords(
+      language: language, filter: filter);
+});
+
+/// 已学词数流（主页入口角标）。
+final learnedCountProvider =
+    StreamProvider.autoDispose.family<int, String>((ref, language) {
+  return ref.watch(dbProvider).progressDao.watchLearnedCount(language);
+});

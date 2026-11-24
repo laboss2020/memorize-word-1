@@ -58,6 +58,36 @@ class WordDao extends DatabaseAccessor<AppDatabase> with _$WordDaoMixin {
         .get();
   }
 
+  /// 点词查字典：按词形精确查询（忽略大小写），频率序取第一个。
+  Future<Word?> lookupByHeadword(String language, String key) {
+    return customSelect(
+      'SELECT * FROM words WHERE language = ? AND lower(headword) = lower(?) '
+      'ORDER BY freq_rank IS NULL, freq_rank ASC LIMIT 1',
+      variables: [Variable(language), Variable(key)],
+      readsFrom: {words},
+    ).get().then((rows) => rows.isEmpty ? null : _wordFromRow(rows.first));
+  }
+
+  /// 词库词形集合（点词查字典的分词用）：
+  /// en 为小写 headword；ja 为 headword + reading。
+  Future<Set<String>> headwordForms(String language) async {
+    final rows = await customSelect(
+      'SELECT headword, reading FROM words WHERE language = ?',
+      variables: [Variable(language)],
+      readsFrom: {words},
+    ).get();
+    return {
+      for (final r in rows) ...[
+        if (language == 'en') r.read<String>('headword').toLowerCase(),
+        if (language != 'en') ...[
+          r.read<String>('headword'),
+          if (r.readNullable<String>('reading') != null)
+            r.read<String>('reading')!,
+        ],
+      ],
+    };
+  }
+
   /// 抽取新词：无进度、难度靠近目标、按频率升序。
   Future<List<Word>> nextNewWords({
     required String language,

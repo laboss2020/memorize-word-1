@@ -114,6 +114,23 @@ class HomePage extends ConsumerWidget {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          // 已学单词入口
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.style_outlined, color: scheme.primary),
+              title: Text(t.learnedWords),
+              subtitle: Text(t.learnedWordsSub),
+              trailing: Text(
+                '${ref.watch(learnedCountProvider(language)).value ?? 0}',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(color: scheme.primary),
+              ),
+              onTap: () => context.push('/learned'),
+            ),
+          ),
           // 建议卡（规则模板）
           for (final sug in suggestions) ...[
             const SizedBox(height: 12),

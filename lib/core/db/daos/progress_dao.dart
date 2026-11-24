@@ -135,6 +135,48 @@ class ProgressDao extends DatabaseAccessor<AppDatabase> with _$ProgressDaoMixin 
         ));
   }
 
+  /// 已学词数流（主页「已学单词」入口角标）。
+  Stream<int> watchLearnedCount(String language) {
+    final c = countAll();
+    final q = selectOnly(wordProgress)
+      ..addColumns([c])
+      ..where(wordProgress.language.equals(language) &
+          wordProgress.deletedAt.isNull());
+    return q.watchSingle().map((row) => row.read(c) ?? 0);
+  }
+
+  /// 已学单词列表（有进度且未删除，按最近学习倒序；已学单词页）。
+  /// [filter] null=全部；1=学习中(state in 1,3)；2=巩固中(state=2 且 stability<21)；
+  /// 3=已掌握(state=2 且 stability≥21，与统计页口径一致)。
+  Stream<List<(Word, WordProgressData)>> watchLearnedWords({
+    required String language,
+    int? filter,
+    int limit = 500,
+  }) {
+    final words = attachedDatabase.words;
+    Expression<bool> extra = const Constant(true);
+    if (filter == 1) {
+      extra = wordProgress.state.isIn([1, 3]);
+    } else if (filter == 2) {
+      extra = wordProgress.state.equals(2) &
+          wordProgress.stability.isSmallerThanValue(21);
+    } else if (filter == 3) {
+      extra = wordProgress.state.equals(2) &
+          wordProgress.stability.isBiggerOrEqualValue(21);
+    }
+    final query = select(wordProgress).join([
+      innerJoin(words, words.id.equalsExp(wordProgress.wordId)),
+    ])
+      ..where(wordProgress.language.equals(language) &
+          wordProgress.deletedAt.isNull() &
+          extra)
+      ..orderBy([OrderingTerm.desc(wordProgress.lastReviewAt)])
+      ..limit(limit);
+    return query.watch().map((rows) => [
+          for (final row in rows) (row.readTable(words), row.readTable(wordProgress)),
+        ]);
+  }
+
   /// 软删除（"不再学"）。
   Future<void> softDelete(String wordId, {required int nowMs}) {
     return (update(wordProgress)..where((p) => p.wordId.equals(wordId))).write(

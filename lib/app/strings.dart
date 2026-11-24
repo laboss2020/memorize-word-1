@@ -1045,6 +1045,56 @@ class AppStrings {
         _ => '加载失败: $error',
       };
 
+  // ---- 点词查字典 / 已学单词 ----
+
+  String get notInDict => switch (localeName) {
+        'en' => 'Not in the dictionary',
+        'ja' => '辞書に未収録',
+        _ => '词库未收录',
+      };
+
+  String get viewDetail => switch (localeName) {
+        'en' => 'View detail',
+        'ja' => '詳細を見る',
+        _ => '查看详情',
+      };
+
+  String get learnedWords => switch (localeName) {
+        'en' => 'Learned Words',
+        'ja' => '学習済み単語',
+        _ => '已学单词',
+      };
+
+  String get learnedWordsSub => switch (localeName) {
+        'en' => 'Browse words you have studied',
+        'ja' => '学んだ単語を見返す',
+        _ => '回看学过的每一个词',
+      };
+
+  String get filterAll => switch (localeName) {
+        'en' => 'All',
+        'ja' => 'すべて',
+        _ => '全部',
+      };
+
+  String get filterLearning => switch (localeName) {
+        'en' => 'Learning',
+        'ja' => '学習中',
+        _ => '学习中',
+      };
+
+  String get filterYoung => switch (localeName) {
+        'en' => 'Familiar',
+        'ja' => '定着中',
+        _ => '巩固中',
+      };
+
+  String get filterMature => switch (localeName) {
+        'en' => 'Mastered',
+        'ja' => '習得済み',
+        _ => '已掌握',
+      };
+
   // ---- 通知（无 BuildContext：按平台语言取） ----
 
   String get reminderBody => switch (localeName) {

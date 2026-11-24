@@ -103,9 +103,16 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
                   glossMode: glossMode,
                   learningLang: word.language,
                 );
+                final heads =
+                    ref.watch(knownHeadProvider(word.language)).value;
                 return Card(
                   child: ListTile(
-                    title: Text(e.text),
+                    title: TappableExampleText(
+                      text: e.text,
+                      language: word.language,
+                      glossMode: glossMode,
+                      knownHeads: heads,
+                    ),
                     subtitle: trs.isEmpty
                         ? null
                         : Text(trs.join('\n')),

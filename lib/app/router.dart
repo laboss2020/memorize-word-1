@@ -7,6 +7,7 @@ import '../features/ai_chat/ai_chat_page.dart';
 import '../features/about/about_page.dart';
 import '../features/home/home_page.dart';
 import '../features/library/deck_words_page.dart';
+import '../features/library/learned_words_page.dart';
 import '../features/library/library_page.dart';
 import '../features/onboarding/onboarding_page.dart';
 import '../features/review/review_list_page.dart';
@@ -96,6 +97,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/review',
         builder: (context, state) => const ReviewListPage(),
+      ),
+      GoRoute(
+        path: '/learned',
+        builder: (context, state) => const LearnedWordsPage(),
       ),
       GoRoute(
         path: '/ai',
