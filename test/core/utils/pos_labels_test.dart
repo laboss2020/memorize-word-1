@@ -36,7 +36,7 @@ void main() {
 
     test('空段跳过；全空回退原串', () {
       expect(posLabel('n//v', 'zh'), '名词·动词');
-      expect(posLabel('/'), '/');
+      expect(posLabel('/', 'zh'), '/');
     });
 
     test('glossMode 非 zh/en/ja 回退中文', () {
