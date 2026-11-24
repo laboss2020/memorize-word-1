@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/providers.dart';
 import '../../app/strings.dart';
+import '../../core/utils/pos_labels.dart';
 import '../../core/utils/word_content.dart';
 
 /// 已学单词列表：按最近学习倒序，可按掌握状态筛选，点词进详情。
@@ -95,7 +96,7 @@ class _LearnedWordsPageState extends ConsumerState<LearnedWordsPage> {
                               ],
                               if (word.pos != null) ...[
                                 const SizedBox(width: 8),
-                                Text(word.pos!,
+                                Text(posLabel(word.pos!, glossMode),
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall

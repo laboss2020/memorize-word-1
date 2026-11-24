@@ -163,6 +163,13 @@ class AppStrings {
         _ => '新词',
       };
 
+  /// 学习进度条里的短标签（区别于主页「待复习」）。
+  String get reviewShort => switch (localeName) {
+        'en' => 'Review',
+        'ja' => '復習',
+        _ => '复习',
+      };
+
   String continueStudy(int done) => switch (localeName) {
         'en' => 'Continue ($done done)',
         'ja' => '学習を続ける（$done 完了）',

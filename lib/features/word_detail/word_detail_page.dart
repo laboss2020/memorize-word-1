@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../app/strings.dart';
 import '../../core/db/app_database.dart';
 import '../../core/tts/tts_service.dart';
+import '../../core/utils/pos_labels.dart';
 import '../../core/utils/word_content.dart';
 import 'tappable_example_text.dart';
 
@@ -80,7 +81,7 @@ class _WordDetailPageState extends ConsumerState<WordDetailPage> {
               ),
               if (word.pos != null)
                 Chip(
-                  label: Text(word.pos!),
+                  label: Text(posLabel(word.pos!, glossMode)),
                   visualDensity: VisualDensity.compact,
                 ),
             ],

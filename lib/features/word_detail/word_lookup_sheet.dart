@@ -6,6 +6,7 @@ import '../../app/providers.dart';
 import '../../app/strings.dart';
 import '../../core/db/app_database.dart';
 import '../../core/tts/tts_service.dart';
+import '../../core/utils/pos_labels.dart';
 import '../../core/utils/text_tokens.dart';
 import '../../core/utils/word_content.dart';
 
@@ -123,7 +124,7 @@ class _FoundWordState extends ConsumerState<_FoundWord> {
         if (word.pos != null)
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Text(word.pos!,
+            child: Text(posLabel(word.pos!, widget.glossMode),
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall

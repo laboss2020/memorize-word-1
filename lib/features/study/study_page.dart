@@ -7,6 +7,7 @@ import '../../app/strings.dart';
 import '../../core/db/app_database.dart' show Word;
 import '../../core/fsrs/rating_mapper.dart' show StudyMode;
 import '../../core/tts/tts_service.dart';
+import '../../core/utils/pos_labels.dart';
 import '../../core/utils/word_content.dart';
 import '../home/home_providers.dart' show dueCountProvider;
 import '../word_detail/tappable_example_text.dart';
@@ -108,17 +109,20 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: Builder(builder: (context) {
-                    // 进度条按当天任务计（今日已完成 / 今日已完成+剩余新词+当前到期），
-                    // 与主页「今日任务」一致；会话计数在续学时只含断点内进度。
+                    // 进度条按当天任务计，复习与新词分开显示：
+                    // 复习 = 今日已复习 / 已复习+当前到期；新词 = 今日已学 / 每日上限。
+                    final s = AppStrings.of(context);
                     final today = ref.watch(todayStatsProvider).value;
                     final dueNow =
                         ref.watch(dueCountProvider(state.language)).value ?? 0;
                     final newDone = today?.newCount ?? 0;
                     final reviewDone = today?.reviewCount ?? 0;
-                    final newLeft = ((settings?.dailyNewLimit ?? 10) - newDone)
-                        .clamp(0, 999);
+                    final newTotal = newDone +
+                        ((settings?.dailyNewLimit ?? 10) - newDone)
+                            .clamp(0, 999);
+                    final reviewTotal = reviewDone + dueNow;
                     final done = newDone + reviewDone;
-                    final total = done + newLeft + dueNow;
+                    final total = newTotal + reviewTotal;
                     return Row(
                       children: [
                         Expanded(
@@ -126,7 +130,8 @@ class _StudyPageState extends ConsumerState<StudyPage> {
                               value: total == 0 ? 0 : done / total),
                         ),
                         const SizedBox(width: 12),
-                        Text('$done/$total',
+                        Text(
+                            '${s.reviewShort} $reviewDone/$reviewTotal · ${s.newWords} $newDone/$newTotal',
                             style: Theme.of(context).textTheme.bodySmall),
                       ],
                     );
@@ -263,7 +268,7 @@ class _NewCardView extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge),
           ],
           if (word.pos != null)
-            Text(word.pos!,
+            Text(posLabel(word.pos!, glossMode),
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
@@ -389,7 +394,7 @@ class _ChoiceView extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge),
           ],
           if (word.pos != null)
-            Text(word.pos!,
+            Text(posLabel(word.pos!, glossMode),
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
