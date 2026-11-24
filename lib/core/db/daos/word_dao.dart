@@ -76,15 +76,17 @@ class WordDao extends DatabaseAccessor<AppDatabase> with _$WordDaoMixin {
       variables: [Variable(language)],
       readsFrom: {words},
     ).get();
-    return {
-      for (final r in rows) ...[
-        if (language == 'en') r.read<String>('headword').toLowerCase(),
-        if (language != 'en') ...[
-          r.read<String>('headword'),
-          if (r.readNullable<String>('reading') case final reading?) reading,
-        ],
-      ],
-    };
+    final heads = <String>{};
+    for (final r in rows) {
+      if (language == 'en') {
+        heads.add(r.read<String>('headword').toLowerCase());
+      } else {
+        heads.add(r.read<String>('headword'));
+        final reading = r.readNullable<String>('reading');
+        if (reading != null) heads.add(reading);
+      }
+    }
+    return heads;
   }
 
   /// 抽取新词：无进度、难度靠近目标、按频率升序。
