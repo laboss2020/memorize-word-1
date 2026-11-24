@@ -116,7 +116,7 @@ class _LearnedWordsPageState extends ConsumerState<LearnedWordsPage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           trailing: Text(
-                            progress.state == 2 && progress.stability >= 21
+                            progress.state == 2 && (progress.stability ?? 0) >= 21
                                 ? s.filterMature
                                 : progress.state == 2
                                     ? s.filterYoung

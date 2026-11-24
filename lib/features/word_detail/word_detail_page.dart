@@ -6,6 +6,7 @@ import '../../app/strings.dart';
 import '../../core/db/app_database.dart';
 import '../../core/tts/tts_service.dart';
 import '../../core/utils/word_content.dart';
+import 'tappable_example_text.dart';
 
 /// 单词详情：释义/例句/发音/进度/历史。
 class WordDetailPage extends ConsumerStatefulWidget {

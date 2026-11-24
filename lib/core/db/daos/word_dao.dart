@@ -81,8 +81,7 @@ class WordDao extends DatabaseAccessor<AppDatabase> with _$WordDaoMixin {
         if (language == 'en') r.read<String>('headword').toLowerCase(),
         if (language != 'en') ...[
           r.read<String>('headword'),
-          if (r.readNullable<String>('reading') != null)
-            r.read<String>('reading')!,
+          if (r.readNullable<String>('reading') case final reading?) reading,
         ],
       ],
     };

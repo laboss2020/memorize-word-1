@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/providers.dart';
 import '../../core/utils/text_tokens.dart';
 import 'word_lookup_sheet.dart';
 
@@ -69,7 +68,7 @@ class _TappableExampleTextState extends ConsumerState<TappableExampleText> {
       spans.add(TextSpan(
         text: token.text,
         style: (widget.style ?? DefaultTextStyle.of(context).style)
-            ?.copyWith(color: Theme.of(context).colorScheme.primary),
+            .copyWith(color: Theme.of(context).colorScheme.primary),
         recognizer: recognizer,
       ));
     }
