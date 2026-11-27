@@ -6,8 +6,9 @@ import '../../app/providers.dart';
 import '../../app/strings.dart';
 import '../../core/utils/pos_labels.dart';
 import '../../core/utils/word_content.dart';
+import '../study/session_controller.dart';
 
-/// 已学单词列表：按最近学习倒序，可按掌握状态筛选，点词进详情。
+/// 已学单词列表：按最近学习倒序，可按掌握状态筛选，点词进入该词的学习。
 /// 筛选口径与统计页一致：学习中(1)/巩固中(2)/已掌握(3)。
 class LearnedWordsPage extends ConsumerStatefulWidget {
   const LearnedWordsPage({super.key});
@@ -130,8 +131,15 @@ class _LearnedWordsPageState extends ConsumerState<LearnedWordsPage> {
                                         .colorScheme
                                         .outline),
                           ),
-                          onTap: () =>
-                              context.push('/library/word/${word.id}'),
+                          onTap: () async {
+                            // 不推 /library/word/*（位于 shell 词库分支内，
+                            // 从 shell 外推送会得到空白分支页），改为单词学习。
+                            await ref
+                                .read(sessionControllerProvider.notifier)
+                                .startSingleReview(
+                                    wordId: word.id, language: language);
+                            if (context.mounted) context.push('/study');
+                          },
                         );
                       },
                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show ValueNotifier;
-import 'package:flutter/widgets.dart' show Widget;
+import 'package:flutter/widgets.dart'
+    show GlobalKey, NavigatorState, Widget;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,6 +21,8 @@ import 'shell/app_shell.dart';
 import 'strings.dart';
 
 /// 全局路由（含 onboarding 守卫）。
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   // redirect 里只能 read 到瞬时值：初始加载（null → 默认行）与完成引导
   // （onboarded 写库）都必须在设置流更新时重估 redirect，否则全新安装
@@ -30,6 +33,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
+    navigatorKey: _rootNavigatorKey,
     refreshListenable: refresh,
     initialLocation: '/home',
     redirect: (context, state) {
@@ -63,7 +67,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                           AppStrings.of(context).fallbackDeckName,
                     ),
                   ),
+                  // 挂到根导航器：详情页可从 shell 外（如 /study 点词查词、
+                  // /learned）推送，避免从 shell 外推分支子路由得到空白页。
                   GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
                     path: 'word/:wordId',
                     builder: (context, state) => WordDetailPage(
                       wordId: state.pathParameters['wordId']!,
